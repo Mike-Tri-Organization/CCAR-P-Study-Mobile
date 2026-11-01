@@ -2,7 +2,7 @@
 
 Android/phone version of the CCAR-P Study desktop app. A static, offline-capable web app: no build step, no dependencies. It uses the same `data/*.json` content as the WPF app.
 
-Screens: Dashboard · Study plan · Domains · Practice · Mock exam (timed) · 10 Labs (7 run against the real Claude API) · Case study · Settings. Four themes plus Auto (follows the phone's dark mode).
+Screens: Dashboard · Study plan · Domains · Practice · Mock exam (timed) · 10 Labs (7 run against the real Claude API) · Case study · Settings. Four themes plus Auto (follows the phone's dark mode). Languages: English and Vietnamese (Tiếng Việt).
 
 ## Run locally
 
@@ -24,6 +24,12 @@ To update: change files, bump `VERSION` in `sw.js`, redeploy. The service worker
 
 Settings → paste your key → **Save & test connection**. The key is stored in this browser only (localStorage) and sent only to `api.anthropic.com`, directly from the phone. Use a key with a low spend limit.
 
+## Languages
+
+Settings → Language: Auto (follows the phone), English or Tiếng Việt. Vietnamese covers the whole UI and all content (questions, explanations, domains, plan, labs, case study). Prompts sent to Claude in the labs stay in English. Because the real exam is in English, **Show practice and mock questions in English** switches the questions back while keeping the Vietnamese interface.
+
+Adding a language: copy `js/lang/vi.js` (UI strings, English text is the key) and `data/vi/*.json` (translated fields keyed by id; any missing entry falls back to English), then register it in `js/i18n.js` and `js/store.js`.
+
 ## Your data
 
 Progress, plan ticks, case notes and settings live in the browser's localStorage on that device. **Settings → Export** saves a JSON backup; **Import** restores it (also works to move progress between browsers). Clearing site data erases progress — export first.
@@ -35,10 +41,12 @@ Content updates: edit `data/questions.json` etc. (same format as the desktop app
 | Path | Purpose |
 |---|---|
 | `index.html`, `styles.css` | Shell and themes |
-| `js/app.js` | Router, bottom navigation, theme |
+| `js/app.js` | Router, bottom navigation, theme, language |
+| `js/i18n.js`, `js/lang/` | UI translations (`t()`), language detection |
 | `js/store.js` | Data loading, progress, statistics |
 | `js/quiz.js` | Practice and mock exam |
 | `js/views.js` | Dashboard, plan, domains, labs, case, settings |
 | `js/labs.js`, `js/claude.js` | Lab runner and Claude API client (ports of `LabRunner.cs`, `ClaudeClient.cs`) |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline + installability |
 | `data/` | Questions, plan, domains, labs, case study, Python lab files |
+| `data/vi/` | Vietnamese translations of the content, keyed by id |

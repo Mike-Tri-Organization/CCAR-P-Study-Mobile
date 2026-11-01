@@ -1,4 +1,5 @@
-import { loadData, settings } from './store.js';
+import { loadData, settings, applyContentLang } from './store.js';
+import { setLang, t as T } from './i18n.js';
 import { h } from './ui.js';
 import * as V from './views.js';
 import { practice, mock, leaveMock } from './quiz.js';
@@ -21,7 +22,7 @@ const ROUTES = {
   plan: () => V.plan(root),
   domains: () => V.domains(root),
   case: () => V.caseStudy(root),
-  settings: () => V.settingsView(root, applyTheme),
+  settings: () => V.settingsView(root, { applyTheme, applyLang }),
   more: () => more(),
 };
 
@@ -34,6 +35,14 @@ function more() {
     item('#/case', 'Case study', 'MekongFreight architecture decisions'),
     item('#/settings', 'Settings', 'Theme, API key, models, backup'));
 }
+
+export function applyLang() {
+  setLang(settings().lang);
+  applyContentLang();
+  if (document.getElementById('nav')) renderNav(currentKey());
+}
+
+const currentKey = () => { const k = location.hash.replace(/^#\/?/, '').split('/')[0]; return ROUTES[k] ? k : ''; };
 
 export function applyTheme() {
   const t = settings().theme;
@@ -49,7 +58,7 @@ function renderNav(active) {
   nav.replaceChildren(...NAV.map(([key, label, d]) => {
     const on = key === active || (key === 'more' && ['plan', 'domains', 'case', 'settings', 'more'].includes(active));
     const svg = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
-    return h('a', { href: '#/' + key, class: 'navitem' + (on ? ' on' : ''), 'aria-current': on ? 'page' : null, html: svg + `<span>${label}</span>` });
+    return h('a', { href: '#/' + key, class: 'navitem' + (on ? ' on' : ''), 'aria-current': on ? 'page' : null, html: svg + `<span>${T(label)}</span>` });
   }));
 }
 
@@ -69,6 +78,7 @@ async function boot() {
     root.replaceChildren(h('div', { class: 'card' }, h('b', null, 'Cannot load study data'), h('p', { class: 'small' }, e.message + ' — open the app once while online.')));
     return;
   }
+  applyLang();
   applyTheme();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
   window.addEventListener('hashchange', route);

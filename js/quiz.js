@@ -1,6 +1,7 @@
 // Practice and mock exam, plus the shared question card.
 import { store, save, record, domainById, isMissed, isUnseen, shuffle, shuffled, sameSet } from './store.js';
 import { h, mount, chips, pct, bars } from './ui.js';
+import { t as T } from './i18n.js';
 
 const isMulti = (q) => q.answer.length > 1;
 
@@ -11,7 +12,7 @@ function questionCard(q, order, preselected, onChange) {
   const rows = [];
   const el = h('div', { class: 'qcard' },
     h('p', { class: 'stem' }, q.stem),
-    isMulti(q) && h('span', { class: 'pill warn' }, `Select ${q.answer.length} — no partial credit`));
+    isMulti(q) && h('span', { class: 'pill warn' }, T('Select {n} — no partial credit', { n: q.answer.length })));
 
   order.forEach((orig, pos) => {
     const row = h('button', {
@@ -56,7 +57,7 @@ function feedback(q, correct) {
   return h('div', { class: 'card feedback ' + (correct ? 'good' : 'bad') },
     h('div', { class: 'fb-title' }, correct ? 'Correct' : 'Not quite'),
     h('p', null, q.explanation),
-    q.trap && h('p', { class: 'trap' }, 'Trap: ' + q.trap));
+    q.trap && h('p', { class: 'trap' }, T('Trap: {t}', { t: q.trap })));
 }
 
 // ======================================================================== practice
@@ -73,7 +74,7 @@ export function practice(root, arg) {
     const start = h('button', { class: 'btn', type: 'button' }, 'Start');
     const upd = () => {
       const n = pool().length;
-      count.textContent = `${n} question${n === 1 ? '' : 's'} match`;
+      count.textContent = n === 1 ? T('1 question matches') : T('{n} questions match', { n });
       start.disabled = n === 0;
     };
     start.addEventListener('click', () => run(shuffled(pool())));
@@ -112,7 +113,7 @@ export function practice(root, arg) {
       }
       mount(root,
         h('div', { class: 'topline' },
-          h('span', { class: 'small' }, `Question ${i + 1} of ${qs.length}${d ? ' · ' + d.name : ''}`),
+          h('span', { class: 'small' }, T('Question {i} of {n}', { i: i + 1, n: qs.length }) + (d ? ' · ' + d.name : '')),
           h('button', { class: 'link', type: 'button', onClick: () => practice(root) }, 'End')),
         h('div', { class: 'progress' }, h('div', { style: `width:${(i / qs.length) * 100}%` })),
         card.el, fbSlot, h('div', { class: 'actions' }, check));
@@ -122,7 +123,7 @@ export function practice(root, arg) {
       h('h1', null, 'Session complete'),
       h('div', { class: 'card' },
         h('div', { class: 'big' }, `${correctCount} / ${qs.length}`),
-        h('p', { class: 'small' }, `${pct(correctCount / qs.length)} correct`),
+        h('p', { class: 'small' }, T('{p} correct', { p: pct(correctCount / qs.length) })),
         h('div', { class: 'actions' },
           h('button', { class: 'btn', type: 'button', onClick: () => practice(root) }, 'Practice again'),
           h('button', { class: 'btn ghost', type: 'button', onClick: () => { location.hash = '#/'; } }, 'Dashboard'))));
@@ -163,7 +164,7 @@ export function mock(root) {
     h('p', { class: 'lede' }, 'Timed at the real pace — 63 questions in 120 minutes. Sampled by domain weight. No feedback until you finish.'),
     h('div', { class: 'card accent' },
       h('div', { class: 'eyebrow' }, 'Pick a length'),
-      chips([['20', `20 · ${minutesFor(20)} min`], ['40', `40 · ${minutesFor(40)} min`], [String(all), `All ${all} · ${minutesFor(all)} min`]], size, (v) => { size = v; }),
+      chips([['20', T('{q} · {m} min', { q: 20, m: minutesFor(20) })], ['40', T('{q} · {m} min', { q: 40, m: minutesFor(40) })], [String(all), T('All {q} · {m} min', { q: all, m: minutesFor(all) })]], size, (v) => { size = v; }),
       h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onClick: () => start(Math.min(+size, all)) }, 'Start mock exam'))),
     h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, 'Exam technique'),
@@ -203,7 +204,7 @@ export function mock(root) {
       const card = questionCard(q, orders[idx], answers[idx], (s) => { answers[idx] = s; });
       mount(root,
         h('div', { class: 'topline sticky' },
-          h('span', { class: 'small' }, `Q ${idx + 1} / ${qs.length}`), clock,
+          h('span', { class: 'small' }, T('Q {i} / {n}', { i: idx + 1, n: qs.length })), clock,
           h('button', { class: 'link', type: 'button', onClick: navigator_ }, 'Navigator')),
         card.el,
         h('div', { class: 'actions row' },
@@ -242,7 +243,7 @@ export function mock(root) {
       mount(root,
         h('div', { class: 'topline sticky' }, h('span', { class: 'small' }, 'Review'), clock, h('button', { class: 'link', type: 'button', onClick: show }, 'Back')),
         h('div', { class: 'card' },
-          h('p', null, `${qs.length - unanswered} answered · ${unanswered} unanswered · ${flags.size} flagged`),
+          h('p', null, T('{a} answered · {u} unanswered · {f} flagged', { a: qs.length - unanswered, u: unanswered, f: flags.size })),
           grid(),
           h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onClick: () => finish(false) }, 'Finish exam'))));
       tick();
@@ -278,14 +279,14 @@ function report(qs, answers, orders, correct, used, byDomain, auto) {
     h('h1', null, auto ? "Time's up" : 'Mock complete'),
     h('div', { class: 'card accent' },
       h('div', { class: 'big' }, `${correct} / ${qs.length}`),
-      h('p', null, `${pct(frac)} · ${used} min used · target 80%`),
+      h('p', null, T('{p} · {m} min used · target 80%', { p: pct(frac), m: used })),
       h('div', { class: 'pill ' + (frac >= 0.8 ? 'good' : 'warn') }, frac >= 0.8 ? 'At or above target' : 'Below target — review the misses')),
     h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, 'By domain'),
       Object.entries(byDomain).map(([id, [c, t]]) => h('div', { class: 'meter' },
         h('div', { class: 'meter-top' }, h('span', null, domainById(id)?.name || id), h('span', null, `${c}/${t}`)),
         h('div', { class: 'meter-bar' }, h('div', { class: c / t >= 0.8 ? 'good' : '', style: `width:${(c / t) * 100}%` }))))),
-    h('h2', null, `Missed (${wrong.length})`),
+    h('h2', null, T('Missed ({n})', { n: wrong.length })),
     wrong.map(({ q, i }) => {
       const card = questionCard(q, orders[i], answers[i]);
       card.reveal();

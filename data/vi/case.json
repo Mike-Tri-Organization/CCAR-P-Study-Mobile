@@ -1,0 +1,62 @@
+{
+  "tagline": "Một công ty logistics bên thứ ba hư cấu tại TP. Hồ Chí Minh — mỗi bài thực hành xây một phần nền tảng Claude của công ty này.",
+  "background": "MekongFreight cung cấp dịch vụ kho bãi, vận tải đường bộ và môi giới hải quan cho khoảng 600 khách hàng doanh nghiệp trên khắp Việt Nam, với các trung tâm tại TP. Hồ Chí Minh, Đà Nẵng và Hải Phòng. Công ty có 1.200 nhân viên. Ban lãnh đạo muốn Claude giúp giảm chi phí hỗ trợ khách hàng, đẩy nhanh thủ tục hải quan và hỗ trợ điều phối viên, và đã thuê bạn làm kiến trúc sư. Yêu cầu của CEO: 'Tôi muốn một AI agent chạy toàn bộ chăm sóc khách hàng và hải quan, và nó không bao giờ được mắc lỗi.'",
+  "facts": [
+    "Khoảng 8.000 tin nhắn khách hàng mỗi ngày (web chat và Zalo), xấp xỉ 70% tiếng Việt và 30% tiếng Anh.",
+    "Khoảng 60% tin nhắn là 'lô hàng của tôi đang ở đâu?'; phần còn lại là đổi lịch giao, thanh toán, khiếu nại bồi thường và phàn nàn.",
+    "Khoảng 3.000 tờ khai hải quan và hóa đơn thương mại mỗi ngày đến dưới dạng PDF và bản scan.",
+    "Hệ thống lõi: Hệ thống quản lý vận tải (TMS) có REST API, SAP cho thanh toán, SharePoint cho chính sách và hợp đồng.",
+    "Dời lịch giao hàng tốn tiền; hoàn tiền và bồi thường trên 10 triệu VND cần quản lý duyệt ngay trong ngày.",
+    "Đội IT có tám người, trong đó hai người đã dùng Claude Code."
+  ],
+  "constraints": [
+    "Dữ liệu cá nhân của khách hàng (họ tên, số điện thoại, số căn cước trên chứng từ hải quan) phải được bảo vệ theo quy định bảo vệ dữ liệu cá nhân của Việt Nam và các hợp đồng với khách hàng.",
+    "Hồ sơ khai hải quan có giá trị pháp lý ràng buộc; sai sót dẫn đến phạt và chậm trễ.",
+    "Câu trả lời hỗ trợ phải dùng chính sách hiện hành: chính sách hoàn tiền đã thay đổi trong năm 2026.",
+    "Ngân sách cố định trong năm; ban lãnh đạo muốn có kết quả thí điểm trong vòng 8 tuần."
+  ],
+  "decisions": {
+    "D1": {
+      "title": "Kết nối Claude với TMS",
+      "situation": "Bộ phận hỗ trợ, điều phối và hải quan đều cần dữ liệu lô hàng từ TMS. Một lập trình viên đề xuất đưa API key admin của TMS vào system prompt của từng trợ lý.",
+      "prompt": "Bạn đề xuất kiến trúc tích hợp nào, và xử lý credential, thao tác ghi cũng như sự cố ngừng hoạt động của TMS ra sao?",
+      "modelAnswer": "Xây một MCP server duy nhất bọc TMS API (xem Bài thực hành L5), cả ba trợ lý cùng tái sử dụng. Credential nằm trong môi trường của server hoặc secret manager, không bao giờ nằm trong prompt. Cung cấp các tool đọc (get_shipment_status, list_events) cho mọi người; đặt các tool ghi (reschedule_delivery) trên một server riêng, giới hạn phạm vi hẹp, hoặc sau một bước phê duyệt. Kiểm tra đầu vào ngay trong server (định dạng mã lô hàng, ngày theo chuẩn ISO). Thử lại các lỗi 5xx tạm thời với backoff ở lớp tool và trả về kết quả is_error có cấu trúc khi TMS ngừng hoạt động, để trợ lý nói rằng hệ thống đang không khả dụng thay vì đoán mò (Bài L4). Dùng một server từ xa dùng chung với xác thực theo từng người dùng hoặc từng dịch vụ khi có hơn vài người cần dùng."
+    },
+    "D2": {
+      "title": "'Một AI agent chạy toàn bộ chăm sóc khách hàng'",
+      "situation": "CEO yêu cầu một agent tự chủ xử lý toàn bộ 8.000 tin nhắn mỗi ngày.",
+      "prompt": "Bạn đề xuất thiết kế nào cho hỗ trợ khách hàng, và vì sao không dùng agent hoàn toàn tự chủ?",
+      "modelAnswer": "Một routing workflow, không phải agent tự chủ. Một mô hình nhỏ, nhanh phân loại mỗi tin nhắn (nhóm, mức khẩn, ngôn ngữ), sau đó một bộ xử lý chuyên biệt trả lời: 'lô hàng của tôi ở đâu' trở thành một lệnh gọi tool tới TMS cộng với câu trả lời theo mẫu; câu hỏi về chính sách đi tới bộ xử lý RAG có căn cứ; đổi lịch giao đi tới bộ xử lý dùng tool với cổng phê duyệt; phàn nàn và khiếu nại bồi thường chuyển cho con người kèm bản tóm tắt do AI soạn (Bài L1). Cách này rẻ hơn, nhanh hơn, kiểm thử được theo từng nhóm và hạn chế những gì có thể sai. Chỉ dành hành vi agent cho các trường hợp hẹp cần dùng tool nhiều bước. Thực thi hạn mức 10 triệu VND trong tool hoàn tiền, không phải trong prompt."
+    },
+    "D3": {
+      "title": "Làm sao biết hệ thống hoạt động tốt?",
+      "situation": "Ban lãnh đạo muốn ra quyết định go/no-go sau đợt thí điểm 8 tuần.",
+      "prompt": "Bạn thiết lập kế hoạch đánh giá nào trước và sau khi ra mắt?",
+      "modelAnswer": "Thống nhất tiêu chí thành công trước: độ chính xác định tuyến, độ đúng của câu trả lời so với chính sách hiện hành, chuyển đúng các khiếu nại bồi thường, thời gian xử lý và CSAT so với mức cơ sở hiện nay. Xây bộ eval từ khoảng 300 tin nhắn thật đã ẩn danh bằng cả tiếng Việt và tiếng Anh, gồm các trường hợp biên (mã lô hàng cũ, khách đang bực, chính sách thay đổi). Chấm bằng code khi có thể (nhóm, JSON hợp lệ, các dữ kiện bắt buộc) và dùng LLM judge đã được hiệu chỉnh cho giọng điệu và mức hữu ích (Bài L7). Báo cáo kết quả theo nhóm và theo ngôn ngữ để điểm trung bình không che giấu lỗi hồi quy. Sau khi ra mắt, mỗi tuần lấy mẫu các cuộc hội thoại production, theo dõi chất lượng, độ trễ, chi phí và tỷ lệ chuyển cho người, và đưa các lỗi trở lại bộ eval. Với lỗi RAG, hãy kiểm tra truy xuất (đoạn chính sách đúng có được trả về không?) trước khi đụng vào prompt hay mô hình."
+    },
+    "D4": {
+      "title": "Dữ liệu cá nhân và chứng từ hải quan",
+      "situation": "Chứng từ hải quan chứa họ tên, số điện thoại và số căn cước. Bộ phận pháp chế hỏi hiện có những biện pháp kiểm soát nào.",
+      "prompt": "Bạn thiết kế những biện pháp quản trị nào cho dữ liệu cá nhân, hồ sơ khai hải quan và prompt injection?",
+      "modelAnswer": "Tối thiểu hóa dữ liệu và che thông tin ngay trong ứng dụng trước khi dữ liệu vào log hoặc prompt ở những nơi không cần thiết (Bài L8). Kiểm soát truy cập tại thời điểm truy xuất: nhân viên và khách hàng chỉ thấy những tài liệu họ được phép. Nhật ký kiểm toán về prompt, lệnh gọi tool, phê duyệt và danh tính người dùng, với các giá trị nhạy cảm được che. Các trường hải quan được trích xuất sẽ được kiểm tra trong code, và một nhân viên môi giới có chứng chỉ phê duyệt mọi hồ sơ trước khi nộp, vì việc nộp không thể đảo ngược và có giá trị pháp lý. Coi tin nhắn và tài liệu đến từ khách hàng là dữ liệu không đáng tin: không có tool nào gửi tiền hoặc nộp hồ sơ có thể bị kích hoạt mà không có phê duyệt. Lập tài liệu về luồng dữ liệu và thời hạn lưu trữ để dữ liệu cá nhân trong log, vector store và cache có thể được tìm thấy và xóa. Có runbook xử lý sự cố: khoanh vùng, bảo toàn, thông báo, tìm nguyên nhân gốc, thêm vào eval."
+    },
+    "D5": {
+      "title": "'Không bao giờ được mắc lỗi'",
+      "situation": "CEO kỳ vọng sự hoàn hảo; trưởng bộ phận hải quan muốn con người kiểm tra mọi thứ; bộ phận vận hành muốn tự động hóa hoàn toàn.",
+      "prompt": "Bạn xử lý kỳ vọng và xung đột về review như thế nào, và việc triển khai diễn ra ra sao?",
+      "modelAnswer": "Chuyển 'không bao giờ mắc lỗi' thành các mục tiêu đo lường được theo từng nhóm, kèm thiết kế xử lý lỗi: chuyển cho người dựa trên mức độ tin cậy, có con người review ở những nơi lỗi gây tốn kém, và một đường rõ ràng để khách hàng gặp được người thật. Giải quyết xung đột về review bằng các tầng rủi ro: 100% có con người phê duyệt cho hồ sơ hải quan và các khoản chi vượt hạn mức, review theo mẫu cho các câu trả lời về trạng thái, với ngưỡng được xem xét lại bằng dữ liệu thí điểm. Triển khai theo giai đoạn: nhân viên nội bộ trước, rồi 10% khách hàng trên web chat, rồi Zalo. Quản lý phiên bản prompt và cấu hình, chạy eval hồi quy trước mỗi thay đổi, có kế hoạch rollback, và bàn giao runbook cho đội IT (Bài L9)."
+    },
+    "D6": {
+      "title": "Mô hình nào cho việc nào?",
+      "situation": "Bộ phận tài chính hỏi vì sao bạn không dùng mô hình mạnh nhất cho mọi việc, hoặc mô hình rẻ nhất cho mọi việc.",
+      "prompt": "Hãy gán mô hình cho việc phân loại, câu trả lời hỗ trợ, trích xuất dữ liệu hải quan và báo cáo tóm tắt hằng đêm, và giải thích các lựa chọn bằng ngôn ngữ kinh doanh.",
+      "modelAnswer": "Phân loại: bậc nhỏ, nhanh — khối lượng lớn, tác vụ đơn giản, độ trễ thấp. Câu trả lời hỗ trợ: bậc cân bằng làm mặc định, dùng caching cho phần đầu chính sách ổn định; chuyển các ca khó lên cao hơn. Trích xuất dữ liệu hải quan: thử cả bậc nhỏ và bậc cân bằng trên bộ eval và chọn bậc rẻ nhất đạt ngưỡng chính xác; dùng schema cho đầu ra có cấu trúc và xử lý batch cho các tài liệu không gấp. Báo cáo tóm tắt hằng đêm cho quản lý: batch API với mức giá ưu đãi, vì không ai cần nó theo thời gian thực. Giải thích từng lựa chọn là 'đạt ngưỡng chất lượng đã đo ở mức chi phí và độ trễ này', kèm số liệu từ Bài L2 và Bài L3."
+    },
+    "D7": {
+      "title": "Trang bị cho đội IT tám người",
+      "situation": "Đội IT sẽ vận hành hệ thống và muốn dùng Claude Code cho công việc của họ.",
+      "prompt": "Bạn thiết lập đội ngũ này như thế nào để vừa an toàn vừa hiệu quả?",
+      "modelAnswer": "Một CLAUDE.md của dự án được commit, có các lệnh build, test, deploy và quy ước; .claude/settings.json dùng chung với quy tắc deny cho các lệnh phá hủy và truy cập production, các tinh chỉnh cá nhân đặt trong settings.local.json; MCP server TMS đã được kiểm duyệt trong .mcp.json với token chỉ đọc; Claude Code trong CI chỉ giới hạn ở sửa lint và test, không có secret production, mọi thay đổi đều qua review PR; custom command cho các việc lặp lại như release notes và chạy eval (Bài L10). Thí điểm với hai kỹ sư có kinh nghiệm, tổ chức một buổi đào tạo ngắn, và đo thời gian chu kỳ PR cùng tỷ lệ sự cố so với mức cơ sở."
+    }
+  }
+}

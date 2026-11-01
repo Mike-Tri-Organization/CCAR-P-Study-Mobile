@@ -1,0 +1,65 @@
+{
+  "summary": "Nước rút 5 tuần theo hướng dẫn kỳ thi hiện hành (tháng 7/2026). Nội dung kỳ thi thay đổi vào ngày 7/12/2026, vì vậy hãy đặt lịch thi muộn nhất là ngày 4/12. Như vậy còn khoảng đệm để đổi lịch, và việc đổi lịch phải thực hiện trước ít nhất 48 giờ. Thời gian được chia theo trọng số lĩnh vực: Tích hợp và Thiết kế giải pháp nhiều nhất, Năng suất lập trình viên ít nhất.",
+  "weeks": {
+    "1": {
+      "title": "Điểm xuất phát, mẫu thiết kế, mô hình",
+      "dates": "2/11 – 8/11",
+      "goal": "Biết điểm xuất phát của mình và nắm vững quyết định gọi đơn → workflow → agent."
+    },
+    "2": {
+      "title": "Tích hợp (lĩnh vực lớn nhất)",
+      "dates": "9/11 – 15/11",
+      "goal": "MCP, tool, xử lý lỗi, secret và RAG — lĩnh vực chiếm 19%."
+    },
+    "3": {
+      "title": "Đánh giá + Quản trị",
+      "dates": "16/11 – 22/11",
+      "goal": "Chứng minh hệ thống hoạt động, giữ cho nó an toàn. Kiểm soát nằm trong code, không nằm trong prompt."
+    },
+    "4": {
+      "title": "Các bên liên quan, năng suất lập trình viên, tổng kết",
+      "dates": "23/11 – 29/11",
+      "goal": "Mặt tư vấn, mặt làm việc nhóm, và toàn bộ tình huống từ đầu đến cuối."
+    },
+    "5": {
+      "title": "Thi thử lần cuối và kỳ thi",
+      "dates": "30/11 – 6/12",
+      "goal": "Lấp nốt các lỗ hổng còn lại, rồi đi thi trước khi nội dung thay đổi."
+    }
+  },
+  "tasks": {
+    "w1-1": "Kiểm tra điều kiện: đăng nhập Anthropic Partner Academy bằng email công ty. Nếu tên miền chưa được nhận diện, hãy yêu cầu ngay (mất 7–10 ngày).",
+    "w1-2": "Đánh giá đầu vào: thi thử 20 câu, có tính giờ. Đừng học trước.",
+    "w1-3": "Đọc thẻ lĩnh vực Thiết kế giải pháp. Viết một câu cho mỗi trường hợp bạn sẽ chọn gọi đơn, workflow, agent và multi-agent.",
+    "w1-4": "Bài thực hành L1 — Routing workflow. Chạy với ba ticket khác nhau; ghi lại mỗi ticket được chuyển vào nhóm nào.",
+    "w1-5": "Bài thực hành L2 — So sánh mô hình. Ghi lại độ trễ và chi phí của từng bậc trên cùng một tác vụ.",
+    "w1-6": "Bài thực hành L3 — Prompt caching. Xác nhận có cache_write ở lần gọi 1 và cache_read ở lần gọi 2.",
+    "w1-7": "Luyện tập: toàn bộ câu hỏi Thiết kế giải pháp, rồi toàn bộ câu hỏi về Mô hình.",
+    "w1-8": "Tình huống: tự trả lời các quyết định D2 (thiết kế) và D6 (mô hình) bằng lời của bạn trước khi xem đáp án mẫu.",
+    "w2-1": "Đọc thẻ lĩnh vực Tích hợp. Giải thích stdio so với Streamable HTTP và secret nằm ở đâu.",
+    "w2-2": "Bài thực hành L5 — Xây MCP server MekongFreight và kết nối với Claude Code.",
+    "w2-3": "Bài thực hành L4 — Tool use có cổng phê duyệt của con người. Thử cả DUYỆT và TỪ CHỐI việc dời lịch.",
+    "w2-4": "Bài thực hành L6 — RAG có kiểm tra trích dẫn. Tìm một truy vấn truy xuất ra chính sách cũ năm 2023 và giải thích vì sao.",
+    "w2-5": "Luyện tập: toàn bộ câu hỏi Tích hợp. Làm lại mọi câu sai vào ngày hôm sau.",
+    "w2-6": "Tình huống: quyết định D1 (tích hợp).",
+    "w2-7": "Thi thử giữa kỳ: 40 câu, có tính giờ. So sánh với điểm đầu vào theo từng lĩnh vực.",
+    "w3-1": "Bài thực hành L7 — Code grader + LLM-as-judge. Tìm một ca mà hai bộ chấm không đồng ý với nhau.",
+    "w3-2": "Hôm nay hướng dẫn kỳ thi bản cập nhật được công bố (áp dụng cho kỳ thi từ 7/12). Lướt qua để tìm điều gì làm rõ thêm các lĩnh vực hiện tại, nhưng hãy tiếp tục học theo hướng dẫn hiện hành.",
+    "w3-3": "Luyện tập: toàn bộ câu hỏi Đánh giá.",
+    "w3-4": "Bài thực hành L8 — Che thông tin + nhật ký kiểm toán. Kiểm tra xem thực sự có gì rời khỏi máy của bạn.",
+    "w3-5": "Luyện tập: toàn bộ câu hỏi Quản trị.",
+    "w3-6": "Tình huống: các quyết định D3 (đánh giá) và D4 (quản trị).",
+    "w3-7": "Ôn điểm yếu: luyện tập ở chế độ 'Làm sai' trên mọi lĩnh vực.",
+    "w4-1": "Bài thực hành L9 — Phiếu khảo sát. Điền cho MekongFreight.",
+    "w4-2": "Luyện tập: toàn bộ câu hỏi Các bên liên quan.",
+    "w4-3": "Bài thực hành L10 — Thiết lập nhóm: CLAUDE.md, quy tắc deny trong settings.json, .mcp.json, CI. Áp dụng vào một repo thử.",
+    "w4-4": "Luyện tập: toàn bộ câu hỏi Năng suất lập trình viên.",
+    "w4-5": "Tổng kết: trả lời lại cả bảy quyết định của tình huống từ trí nhớ, rồi đối chiếu.",
+    "w4-6": "Thi thử đầy đủ: toàn bộ câu hỏi, có tính giờ. Mục tiêu ≥ 80% trước khi đặt lịch thi.",
+    "w4-7": "Đặt lịch thi (Pearson VUE) vào ngày 3 hoặc 4/12 nếu điểm thi thử của bạn ≥ 80%. Chạy kiểm tra hệ thống OnVUE nếu thi trực tuyến.",
+    "w5-1": "Tổng quan: chọn hai lĩnh vực có độ chính xác thấp nhất, tính theo trọng số kỳ thi. Luyện tập 'Làm sai' cho hai lĩnh vực đó.",
+    "w5-2": "Thi thử: 40 câu, có tính giờ.",
+    "w5-3": "Đọc lại danh sách các bẫy trên mọi thẻ lĩnh vực. Ngày nhẹ nhàng.",
+    "w5-4": "Ngày thi (hoặc 4/12). Mang theo giấy tờ tùy thân có ảnh khớp chính xác với tên trong hồ sơ Pearson của bạn."
+  }
+}

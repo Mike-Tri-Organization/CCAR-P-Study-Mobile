@@ -1,4 +1,7 @@
 // Tiny DOM helpers shared by the views.
+import { t } from './i18n.js';
+
+const TR_ATTRS = new Set(['placeholder', 'aria-label', 'title']);
 export function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
   if (attrs) {
@@ -9,7 +12,7 @@ export function h(tag, attrs, ...kids) {
       else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
       else if (k === 'html') el.innerHTML = v;
       else if (v === true) el.setAttribute(k, '');
-      else el.setAttribute(k, v);
+      else el.setAttribute(k, TR_ATTRS.has(k) ? t(v) : v);
     }
   }
   add(el, kids);
@@ -19,7 +22,7 @@ export function h(tag, attrs, ...kids) {
 function add(el, kids) {
   for (const k of kids.flat(Infinity)) {
     if (k == null || k === false) continue;
-    el.append(k instanceof Node ? k : document.createTextNode(String(k)));
+    el.append(k instanceof Node ? k : document.createTextNode(typeof k === 'string' ? t(k) : String(k)));
   }
 }
 
@@ -73,9 +76,9 @@ export function bars(values, labels, target) {
 }
 
 export function toast(msg) {
-  const t = h('div', { class: 'toast', role: 'status' }, msg);
-  document.body.append(t);
-  setTimeout(() => t.remove(), 2600);
+  const el = h('div', { class: 'toast', role: 'status' }, msg);
+  document.body.append(el);
+  setTimeout(() => el.remove(), 2600);
 }
 
 export function download(name, text, type = 'application/json') {

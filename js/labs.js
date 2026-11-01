@@ -1,6 +1,7 @@
 // In-app lab runner: a port of LabRunner.cs. Each mode mirrors the matching Python file in data/labs.
 import { settings } from './store.js';
 import * as C from './claude.js';
+import { t as T } from './i18n.js';
 
 const CATEGORIES = ['tracking', 'customs', 'delivery_change', 'billing', 'claim', 'complaint', 'other'];
 
@@ -124,7 +125,7 @@ export async function runLab(lab, system, prompt, log, signal) {
   }
 
   async function workflow() {
-    log(`STEP 1 — classify with the fast model (${S.modelFast})`, 'head');
+    log(T('STEP 1 — classify with the fast model ({m})', { m: S.modelFast }), 'head');
     const sys = 'Classify the customer message. Reply with JSON only, no prose: ' +
       `{"category": one of ${JSON.stringify(CATEGORIES)}, "urgency": "low|medium|high", "language": "vi|en"}`;
     const r1 = await send(C.body(S.modelFast, sys, prompt, 200));
@@ -134,19 +135,19 @@ export async function runLab(lab, system, prompt, log, signal) {
     const route = parseJsonObject(r1.text);
     let cat = route?.category ?? '';
     if (!CATEGORIES.includes(cat)) {
-      log(`Category '${cat}' failed validation in code → falling back to 'other'.`, 'err');
+      log(T("Category '{c}' failed validation in code → falling back to 'other'.", { c: cat }), 'err');
       cat = 'other';
     }
     let lang = route?.language;
     if (lang !== 'vi' && lang !== 'en') lang = "the customer's language";
-    log(`Routed to playbook: ${cat} · urgency=${route?.urgency ?? ''} · language=${lang}`, 'ok');
+    log(T('Routed to playbook: {c} · urgency={u} · language={l}', { c: cat, u: route?.urgency ?? '', l: lang }), 'ok');
 
-    log(`\nSTEP 2 — answer with the '${cat}' playbook on the balanced model (${S.modelBalanced})`, 'head');
+    log('\n' + T("STEP 2 — answer with the '{c}' playbook on the balanced model ({m})", { c: cat, m: S.modelBalanced }), 'head');
     log('Playbook: ' + PLAYBOOKS[cat], 'info');
     const r2 = await send(C.body(S.modelBalanced, `${PLAYBOOKS[cat]} Reply in the customer's language (${lang}). 3-4 sentences.`, prompt, 500));
     log(r2.text);
     log(r2.usageLine + ` · ~$${cost('balanced', r2).toFixed(5)}`, 'info');
-    log(`\nTotal ~$${(cost('fast', r1) + cost('balanced', r2)).toFixed(5)}. Only the second step needed the bigger model.`, 'ok');
+    log('\n' + T('Total ~${c}. Only the second step needed the bigger model.', { c: (cost('fast', r1) + cost('balanced', r2)).toFixed(5) }), 'ok');
   }
 
   async function compare() {
@@ -164,13 +165,13 @@ export async function runLab(lab, system, prompt, log, signal) {
         let verdict = '';
         if (known) {
           const ok = ['2,012,000', '2.012.000', '2012000', '2 012 000'].some((s) => r.text.includes(s));
-          verdict = ok ? ' · correct' : ' · check answer';
+          verdict = ok ? ' · ' + T('correct') : ' · ' + T('check answer');
           log(ok ? 'Final number matches 2,012,000 VND' : 'Expected 2,012,000 VND — check the reasoning above', ok ? 'ok' : 'err');
         }
         summary.push(`${tier.padEnd(9)} ${String(Math.round(r.latency)).padStart(6)} ms  out=${String(r.outTok).padStart(4)}  ~$${c.toFixed(5)}${verdict}`);
       } catch (e) {
         if (e.name === 'AbortError') throw e;
-        log(e.message + '  (Check the model ID in Settings.)', 'err');
+        log(e.message + '  ' + T('(Check the model ID in Settings.)'), 'err');
         summary.push(`${tier.padEnd(9)} error`);
       }
     }
@@ -182,7 +183,7 @@ export async function runLab(lab, system, prompt, log, signal) {
   async function caching() {
     const sys = system && system.trim() ? system : "You are MekongFreight's claims assistant.";
     const hb = handbook();
-    log(`Stable prefix: system instructions + handbook (${hb.length.toLocaleString()} characters, roughly ${Math.round(hb.length / 4).toLocaleString()} tokens).`, 'info');
+    log(T('Stable prefix: system instructions + handbook ({c} characters, roughly {k} tokens).', { c: hb.length.toLocaleString(), k: Math.round(hb.length / 4).toLocaleString() }), 'info');
     const questions = [prompt, 'Summarize clause 7 in one sentence.'];
     for (let i = 0; i < questions.length; i++) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
@@ -192,12 +193,12 @@ export async function runLab(lab, system, prompt, log, signal) {
         system: [{ type: 'text', text: sys }, { type: 'text', text: hb, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: questions[i] }],
       };
-      log(`\nCALL ${i + 1}: ${questions[i]}`, 'head');
+      log('\n' + T('CALL {n}:', { n: i + 1 }) + ' ' + questions[i], 'head');
       const r = await send(b);
       log(r.text);
       log(r.usageLine + ` · ~$${cost('balanced', r).toFixed(5)}`, 'info');
-      if (r.cacheWrite > 0) log(`cache WRITE: ${r.cacheWrite.toLocaleString()} tokens stored (billed a bit above normal input).`, 'ok');
-      if (r.cacheRead > 0) log(`cache READ: ${r.cacheRead.toLocaleString()} tokens served from cache (billed at a fraction of normal input).`, 'ok');
+      if (r.cacheWrite > 0) log(T('cache WRITE: {n} tokens stored (billed a bit above normal input).', { n: r.cacheWrite.toLocaleString() }), 'ok');
+      if (r.cacheRead > 0) log(T('cache READ: {n} tokens served from cache (billed at a fraction of normal input).', { n: r.cacheRead.toLocaleString() }), 'ok');
       if (!r.cacheWrite && !r.cacheRead) log("No cache activity. Causes: prefix below the model's minimum cacheable length, or the prefix changed.", 'err');
     }
     log('\nTry it: change one word in the system prompt and run again — call 1 becomes a cache write again (miss).', 'info');
@@ -212,7 +213,7 @@ export async function runLab(lab, system, prompt, log, signal) {
       const date = String(input.new_date ?? '');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) return ['new_date must be an ISO date YYYY-MM-DD.', true];
       if (tms[sid].status === 'delivered') return ['Shipment already delivered; cannot reschedule.', true];
-      const ok = confirm(`Claude wants to reschedule ${sid} to ${date}.\n\nReason: ${input.reason ?? ''}\n\nApprove this write action?\n(Human approval, enforced in the tool layer)`);
+      const ok = confirm(T('Claude wants to reschedule {sid} to {date}.\n\nReason: {reason}\n\nApprove this write action?\n(Human approval, enforced in the tool layer)', { sid, date, reason: input.reason ?? '' }));
       if (!ok) return ['Denied by human reviewer. Tell the customer a dispatcher will follow up today.', true];
       tms[sid].eta = date;
       return [JSON.stringify({ ok: true, shipment_id: sid, new_eta: date }), false];
@@ -261,7 +262,7 @@ export async function runLab(lab, system, prompt, log, signal) {
       'Answer only from the documents. Cite document ids like [D2]. ' +
       'If the documents conflict, prefer the most recent effective policy and say so. ' +
       'If the answer is not in the documents, reply exactly: Not in the provided documents.';
-    log(`\nGENERATION (${S.modelBalanced})`, 'head');
+    log('\n' + T('GENERATION ({m})', { m: S.modelBalanced }), 'head');
     const r = await send(C.body(S.modelBalanced, system, user, 400));
     log(r.text);
     log(r.usageLine, 'info');
@@ -271,8 +272,8 @@ export async function runLab(lab, system, prompt, log, signal) {
     const retrieved = new Set(hits.map((h) => h.id));
     const bad = [...cited].filter((c) => !retrieved.has(c));
     if (!cited.size) log("No citations (ok only if the answer is 'Not in the provided documents').", 'info');
-    else if (!bad.length) log(`All citations [${[...cited].join(', ')}] point to retrieved documents.`, 'ok');
-    else log(`Cited but not retrieved: ${bad.join(', ')} → fabricated citation.`, 'err');
+    else if (!bad.length) log(T('All citations [{c}] point to retrieved documents.', { c: [...cited].join(', ') }), 'ok');
+    else log(T('Cited but not retrieved: {c} → fabricated citation.', { c: bad.join(', ') }), 'err');
     log("\nTry: 'refund within how many days' vs 'current 2026 refund policy damaged lost claim days'.", 'info');
   }
 
@@ -281,26 +282,26 @@ export async function runLab(lab, system, prompt, log, signal) {
     const table = [];
     for (const c of lab.cases || []) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-      log(`\nCASE: ${c.input}`, 'head');
+      log('\n' + T('CASE:') + ' ' + c.input, 'head');
       const a = await send(C.body(S.modelFast, system, c.input, 300));
       log('A: ' + a.text);
       const missing = (c.mustInclude || []).filter((m) => !a.text.toLowerCase().includes(m.toLowerCase()));
       if (!missing.length) { pass++; log('code grader: PASS', 'ok'); }
-      else log(`code grader: FAIL — missing ${missing.join(', ')}`, 'err');
+      else log(T('code grader: FAIL — missing {m}', { m: missing.join(', ') }), 'err');
 
       const j = await send(C.body(S.modelBalanced, 'You are a strict, fair grader.',
         `${RUBRIC}\n\nPolicy: ${system}\n\nCustomer: ${c.input}\n\nReply: ${a.text}`, 200));
       const v = parseJsonObject(j.text);
       const score = Number.isInteger(v?.score) ? v.score : -1;
       if (score > 0) { judged++; judgeSum += score; }
-      log(`judge: ${score > 0 ? score : 'unparseable'} — ${v?.reason ?? ''}`, score >= 4 ? 'ok' : score > 0 ? 'warn' : 'err');
+      log(`judge: ${score > 0 ? score : T('unparseable')} — ${v?.reason ?? ''}`, score >= 4 ? 'ok' : score > 0 ? 'warn' : 'err');
       if ((missing.length === 0) !== (score >= 4))
         log('Graders DISAGREE on this case → read the answer yourself. This is how you calibrate a judge.', 'err');
       table.push(`${missing.length === 0 ? 'PASS' : 'FAIL'} judge=${score > 0 ? score : '?'}  ${c.input}`);
     }
     log('\nRESULTS BY CASE', 'head');
     table.forEach((t) => log(t));
-    log(`\nCode pass rate ${pass}/${(lab.cases || []).length} · average judge ${(judged ? judgeSum / judged : 0).toFixed(2)}`, 'ok');
+    log('\n' + T('Code pass rate {p}/{n} · average judge {a}', { p: pass, n: (lab.cases || []).length, a: (judged ? judgeSum / judged : 0).toFixed(2) }), 'ok');
     log('Report per case/category — an average can hide a critical regression.', 'info');
   }
 
@@ -310,7 +311,7 @@ export async function runLab(lab, system, prompt, log, signal) {
     log(prompt, 'info');
     log('\nSENT TO THE MODEL (after redaction in code)', 'head');
     log(safe);
-    log('Redactions: ' + Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(', '), 'ok');
+    log(T('Redactions:') + ' ' + Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(', '), 'ok');
 
     const r = await send(C.body(S.modelFast, system, safe, 200));
     log('\nMODEL OUTPUT', 'head');

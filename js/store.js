@@ -1,9 +1,13 @@
 // Data loading, persisted progress (localStorage) and study statistics.
+import { getLang } from './i18n.js';
+
 const KEY = 'ccarp.progress.v1';
 const API_KEY = 'ccarp.apikey';
 
 export const DEFAULT_SETTINGS = {
   theme: 'auto',
+  lang: 'auto',
+  questionsEnglish: false,
   modelFast: 'claude-haiku-5-5',
   modelBalanced: 'claude-sonnet-5-5',
   modelTop: 'claude-opus-5-5',
@@ -20,6 +24,10 @@ export const store = {
 const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const set = (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } };
 
+// English originals and per-language overlays. Overlays hold only translated fields, keyed by id.
+const original = {};
+const overlays = {};
+
 export async function loadData() {
   const j = (f) => fetch('data/' + f).then((r) => {
     if (!r.ok) throw new Error('Cannot load data/' + f);
@@ -28,12 +36,50 @@ export async function loadData() {
   const [d, q, p, l, c] = await Promise.all([
     j('domains.json'), j('questions.json'), j('plan.json'), j('labs.json'), j('case.json'),
   ]);
-  store.domains = d.sort((a, b) => a.number - b.number);
-  store.questions = q;
-  store.plan = p;
-  store.labs = l;
-  store.caseStudy = c;
+  original.domains = d.sort((a, b) => a.number - b.number);
+  original.questions = q;
+  original.plan = p;
+  original.labs = l;
+  original.caseStudy = c;
+  // Translation overlays are optional: a missing file just means English is shown.
+  const o = (lang, f) => fetch(`data/${lang}/${f}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+  const [vd, vq, vp, vl, vc] = await Promise.all(['domains', 'questions', 'plan', 'labs', 'case'].map((f) => o('vi', f + '.json')));
+  overlays.vi = { domains: vd, questions: vq, plan: vp, labs: vl, caseStudy: vc };
   store.progress = normalize(parse(get(KEY)));
+  applyContentLang();
+}
+
+const pick = (target, src, fields) => {
+  if (!src) return target;
+  for (const f of fields) if (src[f] !== undefined) target[f] = src[f];
+  return target;
+};
+
+/** Rebuild store content from the English originals plus the overlay for the current language. */
+export function applyContentLang() {
+  if (!original.domains) return;
+  const lang = getLang();
+  const ov = overlays[lang] || { domains: {}, questions: {}, plan: {}, labs: {}, caseStudy: {} };
+  const clone = (x) => structuredClone(x);
+  const S = store.progress?.settings;
+
+  store.domains = clone(original.domains).map((d) => pick(d, ov.domains[d.id], ['name', 'summary', 'keyIdeas', 'traps']));
+  store.questions = clone(original.questions).map((q) =>
+    S?.questionsEnglish ? q : pick(q, ov.questions[q.id], ['stem', 'options', 'explanation', 'trap']));
+  store.labs = clone(original.labs).map((l) => pick(l, ov.labs[l.id], ['title', 'goal', 'concept', 'takeaways']));
+
+  const p = clone(original.plan), op = ov.plan || {};
+  if (op.summary) p.summary = op.summary;
+  for (const w of p.weeks) {
+    pick(w, op.weeks?.[w.number], ['title', 'dates', 'goal']);
+    for (const t of w.tasks) if (op.tasks?.[t.id]) t.text = op.tasks[t.id];
+  }
+  store.plan = p;
+
+  const c = clone(original.caseStudy), oc = ov.caseStudy || {};
+  pick(c, oc, ['tagline', 'background', 'facts', 'constraints']);
+  for (const dec of c.decisions) pick(dec, oc.decisions?.[dec.id], ['title', 'situation', 'prompt', 'modelAnswer']);
+  store.caseStudy = c;
 }
 
 function parse(s) { try { return s ? JSON.parse(s) : null; } catch { return null; } }

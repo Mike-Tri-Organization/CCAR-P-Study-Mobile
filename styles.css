@@ -166,3 +166,6 @@ textarea.input { resize: vertical; }
 
 @media (min-width: 760px) { main { padding-top: 32px; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+.check-row { display: flex; gap: 12px; align-items: flex-start; margin-top: 14px; }
+.check-row .check { margin-top: 2px; }

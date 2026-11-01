@@ -1,0 +1,139 @@
+{
+  "integ": {
+    "name": "Tích hợp",
+    "summary": "Cách Claude kết nối với các hệ thống xung quanh: MCP server, API, tool, các agent khác và truy xuất (RAG). Quyền truy cập, bí mật (secret), và điều gì xảy ra khi một tích hợp bị lỗi.",
+    "keyIdeas": [
+      "Bọc một hệ thống dùng chung thành một MCP server duy nhất; nhiều trợ lý cùng tái sử dụng.",
+      "Secret nằm ở lớp tool/server (biến môi trường, secret manager), không bao giờ nằm trong ngữ cảnh của mô hình.",
+      "Đặc quyền tối thiểu: tách tool đọc khỏi tool ghi/phá hủy; giới hạn credential theo từng server.",
+      "Khi tool lỗi, trả về lỗi có cấu trúc (is_error) để mô hình thử lại hoặc báo cáo trung thực.",
+      "Kiểm tra đầu vào của tool ở phía server; siết JSON schema bằng enum, định dạng và ví dụ.",
+      "stdio = tiến trình cục bộ; Streamable HTTP + xác thực = server từ xa dùng chung.",
+      "Chất lượng RAG thường là vấn đề truy xuất: metadata, quản lý phiên bản, lọc, chia chunk.",
+      "Subagent trả về bản tóm tắt có cấu trúc, gọn nhẹ, không phải toàn bộ transcript."
+    ],
+    "traps": [
+      "Đưa credential vào system prompt hoặc mô tả tool.",
+      "Dựa vào một câu trong mô tả tool ('không bao giờ gọi delete trừ khi chắc chắn') như một biện pháp kiểm soát bảo mật.",
+      "Sửa câu trả lời RAG kém bằng cách nhồi thêm chunk vào ngữ cảnh.",
+      "Nuốt lỗi của tool và trả về 'thành công' rỗng."
+    ]
+  },
+  "design": {
+    "name": "Thiết kế giải pháp và kiến trúc",
+    "summary": "Biến nhu cầu kinh doanh thành thiết kế Claude phù hợp: một lần gọi, workflow cố định, agent hay multi-agent; cộng với batch so với real-time và nơi áp dụng các quy tắc cứng.",
+    "keyIdeas": [
+      "Chọn mẫu đơn giản nhất đáp ứng được yêu cầu: gọi đơn → workflow → agent → multi-agent.",
+      "Workflow (chaining, routing, parallelization) phù hợp với các bước đã biết và lặp lại.",
+      "Agent phù hợp với tác vụ mở mà các bước không thể biết trước; hãy đặt ngân sách và tiêu chí dừng.",
+      "Multi-agent đáng giá khi các tác vụ con độc lập, chạy song song được và cần ngữ cảnh riêng.",
+      "Xử lý batch cho khối lượng lớn, không gấp; real-time cho độ trễ tương tác.",
+      "Quy tắc nghiệp vụ (hạn mức, phê duyệt) được thực thi bằng code, không phải bằng prompt.",
+      "Tài liệu nằm vừa trong ngữ cảnh có thể không cần RAG — hãy cân nhắc ngữ cảnh dài + caching."
+    ],
+    "traps": [
+      "Chọn agent khi một workflow đã giải quyết được.",
+      "Dùng multi-agent 'vì việc này quan trọng'.",
+      "Dựng vector DB trước khi kiểm tra xem kho tài liệu có nằm vừa trong ngữ cảnh không.",
+      "Thực thi giới hạn tiền bạc/an toàn bằng một dòng trong system prompt."
+    ]
+  },
+  "eval": {
+    "name": "Đánh giá, kiểm thử và tối ưu",
+    "summary": "Chứng minh hệ thống hoạt động tốt trước và sau khi ra mắt: tiêu chí thành công, bộ dữ liệu đánh giá, code grader, LLM-as-judge, review của con người, phân lát (slicing), kiểm thử hồi quy và chẩn đoán lỗi.",
+    "keyIdeas": [
+      "Tiêu chí thành công và một bộ đánh giá đại diện phải có trước khi xây dựng.",
+      "Dùng bộ chấm rẻ nhất mà vẫn đáng tin: code grader > LLM-as-judge > con người, tùy tác vụ.",
+      "Hiệu chỉnh LLM judge so với nhãn của con người; dùng rubric cụ thể.",
+      "Phân lát kết quả theo nhóm; điểm trung bình tăng có thể che giấu một lỗi hồi quy nghiêm trọng.",
+      "Tách chỉ số truy xuất (recall@k) khỏi chỉ số sinh (faithfulness).",
+      "Giám sát production đưa các lỗi trở lại bộ đánh giá.",
+      "Tối ưu chi phí bằng caching, định tuyến mô hình và batching — rồi chạy lại eval."
+    ],
+    "traps": [
+      "Phát hành chỉ vì điểm trung bình tăng.",
+      "Tin vào một LLM judge chưa được hiệu chỉnh.",
+      "Đổi mô hình trước khi xác định lỗi nằm ở truy xuất hay ở sinh.",
+      "Coi eval là hoạt động một lần trước khi ra mắt."
+    ]
+  },
+  "gov": {
+    "name": "Quản trị, an toàn và quản lý rủi ro",
+    "summary": "Hàng rào bảo vệ (guardrail) đặt ở đâu, con người review ở đâu, truy cập và tối thiểu hóa dữ liệu, prompt injection, xử lý sự cố và tuân thủ (GDPR, HIPAA, luật bảo vệ dữ liệu của địa phương).",
+    "keyIdeas": [
+      "Tuân thủ cần các biện pháp kiểm soát thật trong hệ thống; một dòng trong prompt không phải là biện pháp kiểm soát.",
+      "Tối thiểu hóa dữ liệu: đừng đưa vào ngữ cảnh dữ liệu mà bot không bao giờ được tiết lộ.",
+      "Coi nội dung truy xuất/đầu vào là dữ liệu không đáng tin (prompt injection).",
+      "Có con người phê duyệt trước các hành động không thể đảo ngược hoặc có tác động lớn.",
+      "Thực thi kiểm soát truy cập tại thời điểm truy xuất (ACL ở cấp tài liệu).",
+      "Nhật ký kiểm toán: prompt, lệnh gọi tool, phê duyệt, danh tính — có che dữ liệu nhạy cảm.",
+      "Ứng phó sự cố: khoanh vùng, bảo toàn bằng chứng, thông báo, tìm nguyên nhân gốc, thêm vào eval.",
+      "Biết dữ liệu cá nhân nằm ở đâu (log, vector store, cache) để có thể xóa được."
+    ],
+    "traps": [
+      "'Bảo mô hình đừng ghi log PHI.'",
+      "Nhờ mô hình kiểm tra quyền của người dùng.",
+      "Review con người cho mọi thứ (hoặc không cho gì) thay vì review phân tầng theo rủi ro.",
+      "Xóa log sau một sự cố."
+    ]
+  },
+  "stake": {
+    "name": "Giao tiếp với các bên liên quan và quản lý vòng đời",
+    "summary": "Mặt tư vấn: khảo sát (discovery), quản lý kỳ vọng, giải thích đánh đổi bằng ngôn ngữ kinh doanh, chỉ số thành công, kiểm soát thay đổi, triển khai, nâng cấp mô hình và bàn giao.",
+    "keyIdeas": [
+      "Khảo sát trước: vấn đề, người dùng, quy trình hiện tại, chỉ số, ràng buộc, khối lượng.",
+      "Chuyển kỳ vọng '100% chính xác' thành mục tiêu đo lường được cùng cách xử lý lỗi.",
+      "Giải thích lựa chọn mô hình bằng ngôn ngữ kinh doanh: đạt ngưỡng chất lượng, chi phí, độ trễ, quy mô.",
+      "Đề xuất phân tầng theo rủi ro giải quyết xung đột giữa tuân thủ và tự động hóa.",
+      "Quản lý phiên bản prompt/cấu hình; chạy eval hồi quy trước mỗi thay đổi.",
+      "Triển khai theo giai đoạn, giám sát và có kế hoạch rollback.",
+      "Nâng cấp mô hình phải qua bộ eval và canary.",
+      "Bàn giao = runbook, eval, dashboard, quy trình xử lý sự cố, người chịu trách nhiệm."
+    ],
+    "traps": [
+      "Xây dựng khi chưa thống nhất tiêu chí thành công.",
+      "Hứa hẹn sự hoàn hảo.",
+      "Sửa prompt production trực tiếp.",
+      "Chuyển sang mô hình mới ngay ngày nó ra mắt."
+    ]
+  },
+  "models": {
+    "name": "Mô hình Claude, prompting và kỹ thuật ngữ cảnh",
+    "summary": "Chọn đúng mô hình theo năng lực, chi phí và tốc độ; kỹ thuật prompting; đầu ra có cấu trúc; prompt caching; và quản lý những gì được đưa vào context window.",
+    "keyIdeas": [
+      "Mô hình nhỏ/nhanh cho khối lượng lớn và độ trễ chặt; mô hình cao cấp cho suy luận khó và lập trình agentic.",
+      "Định tuyến: mặc định dùng mô hình rẻ, chuyển các ca khó lên bậc cao hơn.",
+      "Tài liệu dài đặt ở đầu, câu hỏi/chỉ dẫn đặt ở cuối.",
+      "Thẻ XML, ví dụ few-shot và tool schema giúp cấu trúc nhất quán.",
+      "Cho mô hình suy luận (extended thinking / từng bước) với bài toán nhiều bước.",
+      "Prompt caching cần phần đầu giống hệt nhau trong thời gian TTL.",
+      "System prompt = vai trò/quy tắc ổn định; lượt của người dùng = dữ liệu theo từng yêu cầu.",
+      "Phiên dài: nén lịch sử, cắt bớt kết quả tool cũ, lưu artifact bên ngoài."
+    ],
+    "traps": [
+      "Dùng mô hình lớn nhất cho mọi việc.",
+      "Đặt nội dung thay đổi trước điểm ngắt cache.",
+      "Sửa lỗi định dạng bằng cách tăng temperature.",
+      "Để ngữ cảnh đầy kết quả tool cũ."
+    ]
+  },
+  "devprod": {
+    "name": "Năng suất lập trình viên và vận hành",
+    "summary": "Cách các nhóm làm việc với Claude hằng ngày: cài đặt dự án Claude Code, CLAUDE.md, quyền hạn, cấu hình MCP, dùng trong CI, lệnh tái sử dụng và triển khai.",
+    "keyIdeas": [
+      "CLAUDE.md của dự án được commit và dùng chung; chứa quy ước và lệnh.",
+      ".claude/settings.json dùng chung; .claude/settings.local.json là của cá nhân và không commit.",
+      "Quy tắc deny và hook chặn các lệnh nguy hiểm một cách tất định.",
+      "CI: đặc quyền tối thiểu, tool nằm trong danh sách cho phép, không có secret production, review PR.",
+      "MCP server đã được kiểm duyệt trong .mcp.json của dự án, dùng token có phạm vi hẹp.",
+      "Quy trình lặp lại được biến thành custom command/skill.",
+      "Triển khai cho tổ chức: thí điểm + đào tạo + managed policy settings; đo kết quả."
+    ],
+    "traps": [
+      "Chia sẻ một API key trong chat.",
+      "Cho mọi người tự cài MCP server tùy ý.",
+      "Dựa vào một ghi chú trong CLAUDE.md để ngăn các lệnh phá hủy.",
+      "Đo mức độ triển khai bằng số lượng seat."
+    ]
+  }
+}

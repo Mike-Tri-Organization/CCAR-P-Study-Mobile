@@ -1,0 +1,626 @@
+{
+  "integ-01": {
+    "stem": "Một khách hàng bán lẻ muốn Claude tra cứu trạng thái đơn hàng trong hệ thống quản lý đơn hàng (OMS) nội bộ, hệ thống này cung cấp REST API. Ba nhóm nội bộ khác cũng dự định xây các trợ lý Claude cần cùng dữ liệu OMS. Kiến trúc sư nên đề xuất điều gì?",
+    "options": [
+      "Xuất dữ liệu OMS mỗi đêm và dán vào system prompt của từng trợ lý.",
+      "Xây một MCP server bọc OMS API với các tool chỉ đọc, và để mọi trợ lý kết nối vào đó.",
+      "Fine-tune một mô hình trên dữ liệu OMS lịch sử để nó biết trạng thái đơn hàng.",
+      "Đưa chuỗi kết nối cơ sở dữ liệu OMS vào system prompt của từng trợ lý để nó truy vấn trực tiếp."
+    ],
+    "explanation": "Một MCP server bọc hệ thống một lần với bề mặt tool được xác định và có phân quyền, rồi mọi trợ lý cùng tái sử dụng. Dữ liệu luôn là dữ liệu trực tiếp, credential nằm trong server, và các tool có thể được giới hạn ở chế độ chỉ đọc.",
+    "trap": "Bản xuất tĩnh sẽ lỗi thời; fine-tuning không cho dữ liệu trực tiếp; credential không bao giờ được nằm trong ngữ cảnh của mô hình."
+  },
+  "integ-02": {
+    "stem": "Một MCP server dùng cho trợ lý hỗ trợ cung cấp get_customer, search_orders và delete_customer. Đợt rà soát bảo mật đánh dấu tool delete. Biện pháp giảm thiểu TỐT NHẤT là gì?",
+    "options": [
+      "Thêm câu 'Chỉ gọi delete_customer nếu bạn hoàn toàn chắc chắn' vào mô tả tool.",
+      "Loại delete_customer khỏi server này; nếu cần xóa, cung cấp qua một server riêng, giới hạn phạm vi hẹp và yêu cầu con người phê duyệt.",
+      "Đặt temperature bằng 0 để mô hình không bao giờ vô tình gọi tool.",
+      "Giữ tool nhưng ghi log mọi lệnh gọi để xem lại sau."
+    ],
+    "explanation": "Đặc quyền tối thiểu: trợ lý hỗ trợ hoàn toàn không nên có khả năng phá hủy. Khi thật sự cần xóa, hãy cô lập nó với credential có phạm vi riêng và một cổng phê duyệt.",
+    "trap": "Một câu trong mô tả tool là hướng dẫn, không phải biện pháp kiểm soát. Chỉ ghi log thì phát hiện được nhưng không ngăn chặn được."
+  },
+  "integ-03": {
+    "stem": "Một trợ lý RAG đưa ra chính sách hoàn tiền đã lỗi thời. Tài liệu chính sách hiện hành CÓ trong chỉ mục, nhưng log cho thấy các chunk được truy xuất đến từ phiên bản năm 2023. Hai hành động nào xử lý được nguyên nhân gốc? (Chọn HAI)",
+    "options": [
+      "Thêm metadata phiên bản/ngày hiệu lực và lọc hoặc ưu tiên phiên bản hiện hành tại thời điểm truy xuất.",
+      "Chuyển sang mô hình lớn nhất hiện có.",
+      "Loại bỏ các tài liệu đã bị thay thế khỏi chỉ mục hoặc đánh dấu là deprecated để chúng bị loại trừ.",
+      "Tăng max_tokens ở lệnh gọi sinh câu trả lời.",
+      "Truy xuất 50 chunk thay vì 5 để chunk đúng nằm đâu đó trong đó."
+    ],
+    "explanation": "Đây là vấn đề truy xuất: phiên bản sai chiến thắng. Hãy sửa bằng lọc metadata và vệ sinh chỉ mục. Mô hình đã trả lời trung thực từ những gì nó được cung cấp.",
+    "trap": "Mô hình lớn hơn và nhiều chunk hơn biến một vấn đề truy xuất thành vấn đề sinh, và nhiều chunk hơn chỉ thêm nhiễu và chi phí."
+  },
+  "integ-04": {
+    "stem": "Một tool tra cứu trạng thái lô hàng thỉnh thoảng nhận HTTP 503 từ API phía sau. Khi điều đó xảy ra, agent đôi khi bịa ra một trạng thái. Cách sửa thiết kế TỐT NHẤT là gì?",
+    "options": [
+      "Thử lại với backoff ngay trong lớp tool; nếu vẫn lỗi, trả về một tool_result lỗi có cấu trúc (is_error) cho mô hình biết dịch vụ không khả dụng để nó báo lại cho người dùng.",
+      "Bắt lỗi và trả về phản hồi thành công rỗng để cuộc hội thoại không bị gián đoạn.",
+      "Thêm 'không bao giờ bịa đặt' vào system prompt.",
+      "Chuyển sang mô hình lớn hơn, vì nó ít bịa dữ liệu hơn."
+    ],
+    "explanation": "Xử lý lỗi tạm thời một cách tất định trong code, và khi tool thật sự lỗi, hãy báo rõ cho mô hình bằng một kết quả lỗi. Khi đó mô hình có thông tin thật để báo cáo thay vì một khoảng trống để lấp.",
+    "trap": "Một 'thành công' rỗng mời gọi sự bịa đặt; prompt và mô hình lớn hơn không sửa được việc thiếu thông tin."
+  },
+  "integ-05": {
+    "stem": "Một MCP server phải gọi một CRM API yêu cầu OAuth client secret. Secret nên nằm ở đâu?",
+    "options": [
+      "Trong system prompt, để Claude đưa nó vào các đối số của tool.",
+      "Trong môi trường chạy của MCP server hoặc một secret manager, không bao giờ để lộ trong ngữ cảnh của mô hình hay tool schema.",
+      "Làm giá trị mặc định trong input schema của tool.",
+      "Trong CLAUDE.md của dự án để mọi lập trình viên đều có."
+    ],
+    "explanation": "Mô hình không bao giờ cần secret. Server tự xác thực bằng credential lấy từ môi trường hoặc secret manager của nó.",
+    "trap": "Bất cứ thứ gì nằm trong ngữ cảnh, schema hoặc tệp được commit đều có thể rò rỉ qua đầu ra, log hoặc kho mã nguồn."
+  },
+  "integ-06": {
+    "stem": "Một agent điều phối giao việc nghiên cứu cho năm subagent. Mỗi subagent trả về toàn bộ transcript làm việc của nó, và ngữ cảnh của agent điều phối bị tràn. Cách sửa tốt nhất là gì?",
+    "options": [
+      "Để mỗi subagent trả về một bản tóm tắt có cấu trúc, ngắn gọn (phát hiện, tham chiếu bằng chứng, câu hỏi còn mở) thay vì toàn bộ transcript.",
+      "Chỉ dựa vào context window lớn hơn.",
+      "Chạy các subagent tuần tự thay vì song song.",
+      "Bỏ agent điều phối và để các subagent nói chuyện trực tiếp với người dùng."
+    ],
+    "explanation": "Một phần giá trị của subagent là cô lập ngữ cảnh: chúng làm phần việc lộn xộn trong ngữ cảnh riêng và trả về kết quả đã chắt lọc. Trả toàn bộ transcript làm mất lợi ích đó.",
+    "trap": "Context window lớn hơn chỉ trì hoãn vấn đề và tăng chi phí; chạy tuần tự không làm giảm khối lượng được trả về."
+  },
+  "integ-07": {
+    "stem": "Một công ty muốn có một MCP server cho hệ thống ticket mà hàng trăm nhân viên có thể dùng từ Claude, với xác thực theo từng người dùng. Cách triển khai nào phù hợp?",
+    "options": [
+      "Một server stdio mà mỗi nhân viên tự chạy cục bộ với một token admin dùng chung.",
+      "Một MCP server từ xa qua Streamable HTTP với xác thực đúng chuẩn (ví dụ OAuth), để mỗi người dùng kết nối bằng danh tính của chính mình.",
+      "Sao chép cơ sở dữ liệu ticket vào từng laptop mỗi đêm.",
+      "Nhúng tài liệu API của hệ thống ticket vào system prompt."
+    ],
+    "explanation": "stdio dành cho tiến trình cục bộ, một người dùng. Một server dùng chung, được vận hành tập trung với xác thực theo từng người dùng là một server từ xa qua HTTP.",
+    "trap": "Một token admin dùng chung làm mất khả năng truy vết theo từng người dùng và vi phạm nguyên tắc đặc quyền tối thiểu."
+  },
+  "integ-08": {
+    "stem": "Claude thỉnh thoảng gọi một tool đặt chỗ với đối số sai định dạng, ví dụ ngày dạng '12/03' thay vì ngày ISO. Hai thay đổi nào hiệu quả nhất? (Chọn HAI)",
+    "options": [
+      "Siết input schema và mô tả của tool: nêu rõ định dạng, dùng enum khi có thể, và đưa một giá trị ví dụ.",
+      "Kiểm tra đầu vào trong tool và trả về một lỗi mô tả rõ để mô hình có thể sửa lệnh gọi.",
+      "Tăng temperature để mô hình thử các định dạng khác nhau.",
+      "Rút ngắn mô tả tool để tiết kiệm token.",
+      "Bật streaming."
+    ],
+    "explanation": "Schema rõ ràng giảm lỗi ngay từ đầu; việc kiểm tra ở phía server cùng thông báo lỗi hữu ích sẽ bắt phần còn lại và cho phép mô hình tự sửa.",
+    "trap": "Mô tả ngắn hơn thường làm việc dùng tool tệ hơn; temperature và streaming không liên quan."
+  },
+  "design-01": {
+    "stem": "Một công ty bảo hiểm cần trích xuất 12 trường cố định từ các mẫu yêu cầu bồi thường chuẩn hóa, khoảng 50.000 mẫu mỗi ngày. Các bước giống hệt nhau mỗi lần và kết quả đưa vào hàng đợi xét duyệt phía sau. Mẫu nào phù hợp nhất?",
+    "options": [
+      "Một hệ thống multi-agent tự chủ quyết định cách xử lý từng mẫu.",
+      "Một lệnh gọi structured-output duy nhất cho mỗi tài liệu (ví dụ tool/JSON schema), chạy trong pipeline batch.",
+      "Một giao diện chat để nhân viên dán từng mẫu vào.",
+      "Một agent có khả năng duyệt web để xác minh từng yêu cầu bồi thường."
+    ],
+    "explanation": "Tác vụ được xác định rõ và lặp lại: một lệnh gọi với schema cho mỗi tài liệu là thiết kế đơn giản và đáng tin cậy nhất, còn xử lý batch phù hợp với khối lượng.",
+    "trap": "Agent thêm chi phí, độ trễ và sự biến động mà không có lợi ích khi các bước đã cố định."
+  },
+  "design-02": {
+    "stem": "Ticket hỗ trợ chia thành năm nhóm, mỗi nhóm có một playbook xử lý khác nhau. Thiết kế nào phù hợp nhất?",
+    "options": [
+      "Một routing workflow: phân loại ticket trước, rồi chuyển tới prompt/bộ xử lý chuyên biệt cho nhóm đó.",
+      "Một prompt rất lớn chứa cả năm playbook cho mọi ticket.",
+      "Một agent hoàn toàn tự chủ tự quyết định quy trình cho từng ticket.",
+      "Fine-tune năm mô hình riêng biệt."
+    ],
+    "explanation": "Routing tách các mối quan tâm: mỗi prompt chuyên biệt đơn giản hơn, dễ kiểm thử hơn và có thể dùng một mô hình khác. Việc phân loại có thể chạy trên một mô hình nhỏ, nhanh.",
+    "trap": "Một prompt khổng lồ làm loãng chỉ dẫn; agent là không cần thiết khi các nhóm đã biết trước."
+  },
+  "design-03": {
+    "stem": "Một khách hàng muốn nghiên cứu cạnh tranh mở: số nguồn và số bước không thể biết trước. Thiết kế nào phù hợp nhất?",
+    "options": [
+      "Một chuỗi prompt cố định ba bước.",
+      "Một agent có tool tìm kiếm và tải trang chạy trong vòng lặp, với tiêu chí dừng rõ ràng và một ngân sách.",
+      "Một prompt duy nhất yêu cầu toàn bộ bản phân tích.",
+      "Một script theo lịch với các URL cố định."
+    ],
+    "explanation": "Khi lộ trình phụ thuộc vào những gì tìm được dọc đường, vòng lặp agent là hợp lý. Ngân sách và tiêu chí dừng giữ chi phí và thời gian chạy trong tầm kiểm soát.",
+    "trap": "Chuỗi cố định không thích ứng được; một lệnh gọi đơn không có cách nào thu thập thêm thông tin mới."
+  },
+  "design-04": {
+    "stem": "Khi nào kiến trúc multi-agent hợp lý nhất?",
+    "options": [
+      "Bất cứ khi nào doanh nghiệp coi tác vụ là quan trọng.",
+      "Khi các tác vụ con phần lớn độc lập, song song hóa được và hưởng lợi từ ngữ cảnh riêng, đủ để bù đắp chi phí và công điều phối phát sinh.",
+      "Luôn luôn, vì nhiều agent hơn làm giảm chi phí token.",
+      "Khi nhóm muốn tránh viết đánh giá (evaluation)."
+    ],
+    "explanation": "Hệ thống multi-agent dùng nhiều token hơn và thêm độ phức tạp điều phối. Chúng xứng đáng với chi phí đó trong công việc rộng, song song hóa được, nơi cô lập ngữ cảnh có ích.",
+    "trap": "Tầm quan trọng không phải là lý do; multi-agent thường làm tăng chi phí."
+  },
+  "design-05": {
+    "stem": "Một khách hàng yêu cầu 'một AI agent' để trả lời câu hỏi của nhân viên từ cuốn sổ tay nhân sự 40 trang, được thay đổi hai lần mỗi năm. Hai khuyến nghị nào tốt nhất? (Chọn HAI)",
+    "options": [
+      "Bắt đầu đơn giản: một lệnh gọi với sổ tay nằm trong ngữ cảnh, dùng prompt caching cho phần đầu sổ tay ổn định.",
+      "Xây một hệ thống multi-agent planner-executor.",
+      "Thống nhất tiêu chí thành công và xây bộ đánh giá gồm các câu hỏi thật của nhân viên trước khi xây dựng.",
+      "Fine-tune một mô hình trên sổ tay ngay lập tức.",
+      "Xây một cơ sở dữ liệu vector tùy chỉnh trước, bất kể kích thước tài liệu."
+    ],
+    "explanation": "Tài liệu 40 trang nằm vừa trong ngữ cảnh, nên ngữ cảnh dài cộng caching là đơn giản nhất. Tiêu chí thành công và eval luôn đến trước trong mọi thiết kế.",
+    "trap": "Chữ 'agent' trong yêu cầu không phải là một đòi hỏi. Không cần hạ tầng RAG khi kho tài liệu nằm vừa trong ngữ cảnh."
+  },
+  "design-06": {
+    "stem": "Một sản phẩm cần gợi ý văn bản ngay trong lúc gõ với độ trễ dưới 2 giây ở khối lượng yêu cầu rất cao. Lựa chọn nào phù hợp?",
+    "options": [
+      "Mô hình bậc cao nhất với extended thinking được bật.",
+      "Một mô hình nhỏ, nhanh với prompt ngắn và streaming, cộng prompt caching cho mọi phần đầu ổn định.",
+      "Một pipeline multi-agent soạn thảo và phản biện từng gợi ý.",
+      "Batch API bất đồng bộ."
+    ],
+    "explanation": "Độ trễ chặt và khối lượng cao hướng tới mô hình nhỏ nhất đạt ngưỡng chất lượng, prompt ngắn và streaming.",
+    "trap": "Xử lý batch là bất đồng bộ; thinking và vòng phản biện làm tăng độ trễ."
+  },
+  "design-07": {
+    "stem": "Mỗi đêm một công ty phải tóm tắt khoảng 200.000 bản ghi hội thoại hỗ trợ. Cần có kết quả vào sáng hôm sau và chi phí là điều quan trọng. Lựa chọn nào phù hợp nhất?",
+    "options": [
+      "Message Batches API, xử lý yêu cầu bất đồng bộ với mức giá ưu đãi.",
+      "Gọi real-time với mức đồng thời tối đa.",
+      "Một agent đọc toàn bộ bản ghi trong một phiên dài.",
+      "Streaming phản hồi tới một dashboard."
+    ],
+    "explanation": "Khối lượng lớn, không gấp chính là trường hợp dùng batch: chi phí thấp hơn, không phải quản lý mức đồng thời, kết quả trong khung thời gian xử lý.",
+    "trap": "Đồng thời real-time tốn kém hơn và cần quản lý giới hạn tốc độ mà không đem lại lợi ích gì ở đây."
+  },
+  "design-08": {
+    "stem": "Một agent có thể hoàn tiền cho khách hàng. Chính sách: hoàn tiền trên 500 USD cần quản lý phê duyệt. Quy tắc này nên được thực thi ở đâu?",
+    "options": [
+      "Trong system prompt, nêu rõ và lặp lại.",
+      "Trong tool hoàn tiền/lớp logic nghiệp vụ, nơi kiểm tra số tiền và chuyển các khoản hoàn lớn tới quy trình phê duyệt bất kể mô hình yêu cầu gì.",
+      "Qua các ví dụ few-shot về cách xử lý hoàn tiền đúng.",
+      "Bằng cách đặt temperature bằng 0."
+    ],
+    "explanation": "Quy tắc nghiệp vụ cứng được thực thi một cách tất định trong code. Mô hình có thể đề xuất; hệ thống quyết định.",
+    "trap": "Chỉ dẫn trong prompt có thể bị bỏ qua hoặc bị thao túng; chúng không phải biện pháp kiểm soát."
+  },
+  "eval-01": {
+    "stem": "Một nhóm sắp xây tính năng tóm tắt hợp đồng. Các bên liên quan chỉ nói 'hãy làm cho tốt'. Điều gì nên xảy ra đầu tiên?",
+    "options": [
+      "Cùng các bên liên quan xác định tiêu chí thành công đo lường được và xây một bộ eval có nhãn mang tính đại diện, gồm cả các trường hợp biên.",
+      "Phát hành phiên bản đầu tiên và thu thập phản hồi.",
+      "Chọn mô hình lớn nhất để tối đa hóa chất lượng.",
+      "Viết một prompt dài hơn, chi tiết hơn."
+    ],
+    "explanation": "Nếu không có tiêu chí được thống nhất và bộ eval thì không có cách nào biết một thay đổi có giúp ích hay không. Điều này cũng neo lại kỳ vọng của các bên liên quan.",
+    "trap": "Xây dựng trước khi tiêu chí thành công được thống nhất là một trong những bẫy phổ biến nhất của kỳ thi."
+  },
+  "eval-02": {
+    "stem": "Bạn cần kiểm tra ở quy mô lớn xem các đầu ra có phải là JSON hợp lệ chứa các khóa bắt buộc với đúng kiểu dữ liệu hay không. Bộ chấm nào phù hợp nhất?",
+    "options": [
+      "Con người review một mẫu.",
+      "Một code grader phân tích JSON và kiểm tra theo schema.",
+      "Một LLM-as-judge có rubric.",
+      "Đánh giá thumbs-up của người dùng."
+    ],
+    "explanation": "Các thuộc tính tất định được chấm một cách tất định: code grader nhanh, rẻ và chính xác.",
+    "trap": "Dùng LLM judge cho việc mà code kiểm tra được chỉ thêm chi phí và sự biến động."
+  },
+  "eval-03": {
+    "stem": "Bạn cần chấm mức hữu ích và giọng điệu của hàng nghìn câu trả lời hỗ trợ mỗi tuần. Cách tiếp cận tốt nhất là gì?",
+    "options": [
+      "So khớp chuỗi chính xác với các câu trả lời tham chiếu.",
+      "Một LLM-as-judge với rubric cụ thể, được hiệu chỉnh so với một mẫu có nhãn của con người.",
+      "Chỉ dùng điểm BLEU so với các câu trả lời tham chiếu.",
+      "Bỏ qua đánh giá; giọng điệu là chủ quan."
+    ],
+    "explanation": "Các phẩm chất chủ quan ở quy mô lớn phù hợp với LLM judge, nhưng chỉ sau khi kiểm tra rằng nó đồng thuận với người chấm trên một mẫu có nhãn.",
+    "trap": "Các chỉ số trùng lặp chuỗi không nắm bắt được giọng điệu; 'chủ quan' không phải là lý do để bỏ qua đánh giá."
+  },
+  "eval-04": {
+    "stem": "Một hệ thống RAG đưa ra câu trả lời sai ở 15% câu hỏi eval. Hai bước nào xác định tốt nhất lỗi nằm ở truy xuất hay ở sinh? (Chọn HAI)",
+    "options": [
+      "Đo truy xuất riêng: với mỗi câu hỏi thất bại, kiểm tra xem đoạn văn chuẩn (gold passage) có xuất hiện trong tập được truy xuất không (recall@k).",
+      "Với các lỗi mà đoạn văn chuẩn ĐÃ được truy xuất, kiểm tra xem câu trả lời có trung thực với ngữ cảnh đó không.",
+      "Chuyển sang mô hình lớn hơn và so sánh.",
+      "Tăng max_tokens.",
+      "Thêm nhiều ví dụ few-shot hơn."
+    ],
+    "explanation": "Tách pipeline ra: nếu đoạn văn đúng không bao giờ đến nơi thì sửa truy xuất; nếu nó đã đến mà câu trả lời vẫn sai thì sửa phần sinh.",
+    "trap": "Đổi mô hình trước khi xác định chỗ lỗi là lãng phí thời gian và có thể không giúp ích."
+  },
+  "eval-05": {
+    "stem": "Sau một thay đổi prompt, điểm judge trung bình tăng 3%, nhưng hai nhóm quan trọng với doanh nghiệp giảm rõ rệt. Bạn nên làm gì?",
+    "options": [
+      "Phát hành, vì mức trung bình chung đã cải thiện.",
+      "Phân lát kết quả theo nhóm, coi hồi quy ở các lát quan trọng là yếu tố chặn, và thêm các ca đó vào bộ kiểm thử hồi quy.",
+      "Loại hai nhóm đó khỏi bộ eval.",
+      "Chạy lại eval cho đến khi các hồi quy biến mất."
+    ],
+    "explanation": "Điểm trung bình che giấu hồi quy. Các phân khúc quan trọng có tiêu chí đạt riêng.",
+    "trap": "Sửa eval cho khớp kết quả, hoặc chạy lại đến khi trông ổn, phá hủy giá trị của eval."
+  },
+  "eval-06": {
+    "stem": "Một LLM judge chấm các đầu ra rất cao, nhưng người review thường không đồng ý với nó. Biện pháp giảm thiểu tốt nhất là gì?",
+    "options": [
+      "Tin vào judge, vì nó nhất quán hơn con người.",
+      "Hiệu chỉnh judge: siết rubric, đo mức đồng thuận với nhãn của con người, và dùng các kỹ thuật như so sánh cặp (pairwise) có hoán đổi vị trí.",
+      "Tăng temperature của judge.",
+      "Ngừng review của con người để tiết kiệm chi phí."
+    ],
+    "explanation": "Một judge chỉ hữu ích khi nó đồng thuận với những con người mà nó thay thế. Hãy đo mức đồng thuận đó và cải thiện rubric cho đến khi chấp nhận được.",
+    "trap": "Nhất quán không có nghĩa là đúng."
+  },
+  "eval-07": {
+    "stem": "Một tính năng Claude đã qua các eval trước khi ra mắt và hiện đang chạy production. Thực hành đánh giá nào nên tiếp tục?",
+    "options": [
+      "Không cần gì; eval trước khi ra mắt là đủ.",
+      "Lấy mẫu lưu lượng production để đánh giá liên tục, giám sát chất lượng, độ trễ, chi phí và tỷ lệ lỗi/từ chối, và đưa các lỗi thật vào bộ eval.",
+      "Chỉ theo dõi chi phí token.",
+      "Chờ người dùng phàn nàn."
+    ],
+    "explanation": "Lưu lượng thật dần trôi khỏi bộ eval. Giám sát liên tục phát hiện điều đó, và các lỗi trên production là ca kiểm thử mới tốt nhất.",
+    "trap": "Coi đánh giá là một cổng kiểm duyệt chỉ một lần."
+  },
+  "eval-08": {
+    "stem": "Mỗi yêu cầu đều gửi cùng 8.000 token chỉ dẫn và tài liệu tham chiếu, theo sau là một câu hỏi ngắn khác nhau của người dùng. Đâu là cách tiết kiệm chi phí và độ trễ lớn nhất mà dễ thực hiện?",
+    "options": [
+      "Bật prompt caching trên phần đầu ổn định (chỉ dẫn + tài liệu).",
+      "Chuyển sang mô hình bậc cao nhất.",
+      "Xóa các chỉ dẫn.",
+      "Đặt câu hỏi của người dùng trước tài liệu tham chiếu."
+    ],
+    "explanation": "Một phần đầu lớn, giống hệt, lặp lại qua các yêu cầu là trường hợp lý tưởng của prompt caching: đọc từ cache rẻ và nhanh hơn nhiều so với xử lý lại.",
+    "trap": "Đưa nội dung thay đổi lên trước nội dung ổn định sẽ phá vỡ caching."
+  },
+  "gov-01": {
+    "stem": "Một khách hàng ngành y tế yêu cầu thông tin sức khỏe được bảo vệ (PHI) không bao giờ đến hệ thống ghi log của ứng dụng. Kiến trúc sư nên làm gì?",
+    "options": [
+      "Chỉ dẫn Claude trong system prompt không đưa PHI vào câu trả lời.",
+      "Triển khai việc che/tối thiểu hóa trong pipeline của ứng dụng trước khi ghi log, hạn chế quyền truy cập log, và xác minh bằng kiểm thử.",
+      "Dùng mô hình lớn hơn vốn tuân thủ chỉ dẫn về quyền riêng tư tốt hơn.",
+      "Yêu cầu người dùng đừng gõ PHI."
+    ],
+    "explanation": "Việc ghi log do ứng dụng thực hiện, nên biện pháp kiểm soát thuộc về ứng dụng. Tuân thủ cần các biện pháp kiểm soát có thể xác minh.",
+    "trap": "Một chỉ dẫn trong prompt không phải là biện pháp kiểm soát tuân thủ."
+  },
+  "gov-02": {
+    "stem": "Một agent đọc email khách hàng gửi đến và có thể gửi email đi. Bộ phận bảo mật lo ngại về prompt injection ẩn trong các thư đến. Cách tiếp cận mạnh nhất là gì?",
+    "options": [
+      "Bảo mô hình trong system prompt hãy bỏ qua các chỉ dẫn nằm trong email.",
+      "Coi nội dung đến là dữ liệu không đáng tin, giới hạn tool (người nhận/mẫu thư nằm trong danh sách cho phép), áp dụng đặc quyền tối thiểu, và yêu cầu con người phê duyệt trước khi gửi đi.",
+      "Tắt việc ghi log email đến.",
+      "Chuyển sang mô hình lớn hơn."
+    ],
+    "explanation": "Hãy giả định đôi khi injection sẽ thành công và giới hạn những gì một mô hình bị thao túng có thể làm. Làm cứng prompt có ích nhưng chỉ là phòng thủ nhiều lớp, không phải biện pháp kiểm soát chính.",
+    "trap": "Phòng thủ chỉ bằng prompt trước injection."
+  },
+  "gov-03": {
+    "stem": "Bộ phận pháp chế hỏi làm sao công ty biết một AI agent không thực hiện các hành động trái phép. Hai biện pháp kiểm soát nào trả lời được câu hỏi này? (Chọn HAI)",
+    "options": [
+      "Nhật ký kiểm toán về prompt, lệnh gọi tool, tham số, phê duyệt và danh tính của người dùng thực hiện hành động.",
+      "Credential có phạm vi, đặc quyền tối thiểu cho từng tool để các hành động trái phép không thể xảy ra.",
+      "Yêu cầu mô hình báo cáo những gì nó đã làm vào cuối mỗi phiên.",
+      "Một system prompt dài hơn liệt kê các hành động bị cấm.",
+      "Tắt việc ghi log lệnh gọi tool để giảm dung lượng lưu trữ."
+    ],
+    "explanation": "Phòng ngừa (quyền có phạm vi) cộng với bằng chứng (nhật ký kiểm toán). Lời tự báo cáo của mô hình không phải là bằng chứng.",
+    "trap": "Lời tự báo cáo và danh sách trong prompt không phải là biện pháp kiểm soát có thể xác minh."
+  },
+  "gov-04": {
+    "stem": "Một trợ lý trên production đã đưa lời khuyên có hại cho một khách hàng. Theo một quy trình xử lý sự cố đúng đắn, điều gì nên xảy ra đầu tiên?",
+    "options": [
+      "Khoanh vùng (tắt hoặc hạn chế tính năng, hoặc rollback), bảo toàn log và bằng chứng, và thông báo theo quy trình sự cố; sau đó phân tích nguyên nhân gốc và thêm ca này vào bộ eval.",
+      "Xóa log hội thoại để hạn chế mức độ phơi bày.",
+      "Huấn luyện lại ngay một mô hình.",
+      "Bỏ qua, vì đây chỉ là một sự cố đơn lẻ."
+    ],
+    "explanation": "Khoanh vùng, bảo toàn, thông báo, rồi rút kinh nghiệm. Ca thất bại trở thành một bài kiểm thử hồi quy vĩnh viễn.",
+    "trap": "Tiêu hủy bằng chứng; bỏ qua bước khoanh vùng."
+  },
+  "gov-05": {
+    "stem": "Một agent soạn thảo và nộp các hồ sơ gửi cơ quan quản lý. Điểm kiểm tra của con người (human-in-the-loop) nên đặt ở đâu?",
+    "options": [
+      "Sau mỗi phản hồi của mô hình.",
+      "Trước hành động không thể đảo ngược, có tác động lớn (nộp hồ sơ), với người review thấy toàn bộ bản nháp và bằng chứng hỗ trợ.",
+      "Không đặt ở đâu cả; độ chính xác của agent cao trên các eval.",
+      "Chỉ trong đợt kiểm toán hằng quý."
+    ],
+    "explanation": "Đặt con người ở nơi sai sót tốn kém hoặc không thể đảo ngược, và cung cấp cho họ những gì cần để đánh giá.",
+    "trap": "Review mọi thứ dẫn đến việc duyệt qua loa; không review gì thì bỏ qua rủi ro."
+  },
+  "gov-06": {
+    "stem": "Một khách hàng EU hỏi ứng dụng Claude của họ sẽ đáp ứng các yêu cầu xóa dữ liệu theo GDPR như thế nào. Trách nhiệm của kiến trúc sư là gì?",
+    "options": [
+      "Không có; nhà cung cấp mô hình lo việc đó.",
+      "Thiết kế luồng dữ liệu để dữ liệu cá nhân do ứng dụng lưu (log, vector store, cache, lịch sử hội thoại) có thể được xác định vị trí và xóa, và lập tài liệu về thời hạn lưu trữ.",
+      "Thêm 'tuân thủ GDPR' vào system prompt.",
+      "Chặn người dùng EU."
+    ],
+    "explanation": "Ứng dụng quyết định nó lưu gì và ở đâu. Bạn chỉ xóa được những gì bạn tìm thấy, vì vậy hãy lập sơ đồ luồng dữ liệu.",
+    "trap": "Tuân thủ bằng prompt."
+  },
+  "gov-07": {
+    "stem": "Một chatbot công khai không bao giờ được tiết lộ các bậc giá nội bộ. Cách tiếp cận mạnh nhất là gì?",
+    "options": [
+      "Một chỉ dẫn mạnh trong system prompt.",
+      "Giữ giá nội bộ ra khỏi mọi thứ mà bot có thể truy cập (tối thiểu hóa dữ liệu), và thêm lọc đầu ra như một lớp phòng thủ bổ sung.",
+      "Các ví dụ few-shot về việc từ chối câu hỏi về giá.",
+      "Temperature 0."
+    ],
+    "explanation": "Bot không thể làm lộ thứ nó chưa bao giờ thấy. Tối thiểu hóa tốt hơn chỉ dẫn.",
+    "trap": "Cho rằng một mô hình sẽ giữ bí mật đáng tin cậy một thứ mà nó đang nắm."
+  },
+  "gov-08": {
+    "stem": "Một trợ lý RAG tìm kiếm tài liệu nhân sự. Nhân viên chỉ được xem các tài liệu họ có quyền. Nên thực thi kiểm soát truy cập như thế nào?",
+    "options": [
+      "Chỉ dẫn mô hình kiểm tra vai trò của người dùng trước khi trả lời.",
+      "Thực thi ACL ở cấp tài liệu tại thời điểm truy xuất, lọc theo quyền của người dùng trước khi bất cứ thứ gì vào ngữ cảnh.",
+      "Viết một prompt riêng cho từng vai trò.",
+      "Tin rằng nhân viên chỉ hỏi những câu phù hợp."
+    ],
+    "explanation": "Việc phân quyền được hệ thống thực thi trước khi dữ liệu đến mô hình, dựa trên danh tính đã được xác thực của người dùng.",
+    "trap": "Nhờ mô hình làm việc phân quyền."
+  },
+  "stake-01": {
+    "stem": "Một nhà tài trợ điều hành kỳ vọng câu trả lời '100% chính xác' từ một trợ lý tiếp nhận hồ sơ pháp lý bằng AI. Kiến trúc sư nên phản hồi thế nào?",
+    "options": [
+      "Đồng ý, để dự án tiếp tục tiến triển.",
+      "Điều chỉnh kỳ vọng: thống nhất các mục tiêu độ chính xác đo lường được cho từng tác vụ, xác định cách phát hiện và xử lý lỗi, yêu cầu con người review với các ca rủi ro cao, và triển khai theo giai đoạn.",
+      "Từ chối dự án.",
+      "Tránh nhắc đến chủ đề này cho đến khi ra mắt."
+    ],
+    "explanation": "Biến một mục tiêu phi thực tế thành các mục tiêu đo lường được cộng với một lưới an toàn. Điều này bảo vệ cả khách hàng lẫn dự án.",
+    "trap": "Hứa hẹn sự hoàn hảo, hoặc bỏ đi thay vì đặt lại vấn đề."
+  },
+  "stake-02": {
+    "stem": "Buổi workshop khảo sát (discovery) ĐẦU TIÊN với một khách hàng mới nên tập trung vào điều gì?",
+    "options": [
+      "Chọn mô hình Claude.",
+      "Hiểu vấn đề kinh doanh, người dùng, quy trình hiện tại, chỉ số thành công, các ràng buộc (dữ liệu, tuân thủ, hệ thống) và khối lượng.",
+      "Viết một bản mẫu ngay trong cuộc họp.",
+      "Trình diễn một hệ thống multi-agent."
+    ],
+    "explanation": "Thiết kế đi theo vấn đề. Việc chọn mô hình và kiến trúc đến sau khảo sát.",
+    "trap": "Nhảy ngay vào công nghệ."
+  },
+  "stake-03": {
+    "stem": "Một bên liên quan phía kinh doanh hỏi vì sao thiết kế dùng mô hình nhỏ, nhanh thay vì mô hình mạnh nhất. Cách giải thích tốt nhất là gì?",
+    "options": [
+      "Mô hình mạnh nhất không đáng tin cậy.",
+      "Trên bộ eval của chúng ta, mô hình nhỏ đạt ngưỡng chất lượng đã thống nhất với một phần nhỏ chi phí và độ trễ, nhờ đó khối lượng này đủ khả năng chi trả; các ca khó có thể được chuyển tới mô hình lớn hơn.",
+      "Một giải thích kỹ thuật về số lượng tham số.",
+      "Đó là mặc định."
+    ],
+    "explanation": "Giải thích các đánh đổi bằng ngôn ngữ kinh doanh, có bằng chứng: chất lượng đạt, chi phí, tốc độ và một đường nâng cấp.",
+    "trap": "Thuật ngữ chuyên môn, hoặc một lựa chọn không có bằng chứng."
+  },
+  "stake-04": {
+    "stem": "Một đợt thí điểm đang chuyển sang production. Hai thực hành vòng đời nào nên có? (Chọn HAI)",
+    "options": [
+      "Quản lý phiên bản prompt và cấu hình, và chạy eval hồi quy trước mỗi thay đổi (kiểm soát thay đổi).",
+      "Triển khai theo giai đoạn, có giám sát và một kế hoạch rollback đã được kiểm thử.",
+      "Sửa trực tiếp prompt production khi người dùng báo lỗi.",
+      "Bỏ qua tài liệu cho đến khi hệ thống ổn định.",
+      "Ra mắt cho toàn bộ người dùng cùng một lúc."
+    ],
+    "explanation": "Kiểm soát thay đổi và triển khai theo giai đoạn giữ production ổn định và các thay đổi có thể đảo ngược.",
+    "trap": "Sửa prompt trực tiếp là thay đổi production chưa được kiểm thử."
+  },
+  "stake-05": {
+    "stem": "Một mô hình Claude mới hơn được phát hành. Một hệ thống production nên tiếp nhận nó như thế nào?",
+    "options": [
+      "Chuyển production sang nó ngay lập tức.",
+      "Chạy bộ eval trên mô hình mới, so sánh chất lượng, chi phí và độ trễ, rồi chạy canary với phương án rollback.",
+      "Không bao giờ nâng cấp một hệ thống đang chạy tốt.",
+      "Để người dùng tự chọn mô hình."
+    ],
+    "explanation": "Đổi mô hình là một thay đổi production: đánh giá, so sánh, canary, giữ phương án rollback.",
+    "trap": "Cho rằng mới hơn thì tự động tốt hơn cho tác vụ của bạn, hoặc đóng băng mãi mãi."
+  },
+  "stake-06": {
+    "stem": "Bộ phận tuân thủ muốn con người review mọi đầu ra của AI; bộ phận vận hành muốn tự động hóa hoàn toàn. Kiến trúc sư nên đề xuất gì?",
+    "options": [
+      "Đứng về phía vận hành; tự động hóa là mục đích chính.",
+      "Định lượng rủi ro theo từng phân khúc và đề xuất review phân tầng theo rủi ro: con người review các nhóm rủi ro cao, lấy mẫu với các nhóm rủi ro thấp, kèm các chỉ số để xem lại ngưỡng.",
+      "Đứng về phía tuân thủ trong mọi trường hợp.",
+      "Chuyển lên lãnh đạo mà không kèm đề xuất."
+    ],
+    "explanation": "Một đề xuất dựa trên rủi ro, có dữ liệu, đáp ứng cả hai mối quan tâm và có thể tinh chỉnh theo thời gian.",
+    "trap": "Review kiểu tất cả hoặc không có gì."
+  },
+  "stake-07": {
+    "stem": "Thành công của một đợt thí điểm nên được đo như thế nào?",
+    "options": [
+      "Số lượng prompt đã gửi.",
+      "Các chỉ số kinh doanh đã thống nhất từ trước (ví dụ thời gian xử lý, độ chính xác so với mức cơ sở, mức hài lòng của khách hàng) so với mức cơ sở trước khi có AI.",
+      "Ấn tượng của nhóm.",
+      "Tổng số token đã dùng."
+    ],
+    "explanation": "Các chỉ số được thống nhất trước đợt thí điểm, so với mức cơ sở, giúp quyết định go/no-go khách quan.",
+    "trap": "Chỉ số hoạt động thay vì chỉ số kết quả."
+  },
+  "stake-08": {
+    "stem": "Bạn đang bàn giao một hệ thống Claude cho đội vận hành của khách hàng. Việc bàn giao nên bao gồm gì?",
+    "options": [
+      "Chỉ mã nguồn.",
+      "Một runbook: kiến trúc, phiên bản prompt/cấu hình, bộ eval và cách chạy, giám sát và cảnh báo, quy trình xử lý sự cố và chuyển cấp, kiểm soát chi phí và người chịu trách nhiệm.",
+      "Một danh sách mật khẩu dùng chung.",
+      "Một bản demo đã quay."
+    ],
+    "explanation": "Đội vận hành cần có khả năng chạy, thay đổi, giám sát và khôi phục hệ thống mà không cần những người xây dựng ban đầu.",
+    "trap": "Code mà không có eval hay quy trình vận hành."
+  },
+  "models-01": {
+    "stem": "Bạn đang đặt câu hỏi về một hợp đồng dài 30.000 token. Tài liệu nên được đặt ở đâu so với chỉ dẫn và câu hỏi?",
+    "options": [
+      "Đặt tài liệu dài ở gần đầu, còn chỉ dẫn và câu hỏi ở cuối.",
+      "Đặt câu hỏi trước, rồi đến tài liệu.",
+      "Chia hợp đồng thành 30 lệnh gọi riêng.",
+      "Thứ tự không quan trọng."
+    ],
+    "explanation": "Hướng dẫn ngữ cảnh dài của Anthropic: tài liệu dài ở đầu, truy vấn ở cuối, điều này có xu hướng cải thiện chất lượng câu trả lời.",
+    "trap": "Đặt câu hỏi trước với đầu vào dài."
+  },
+  "models-02": {
+    "stem": "Đầu ra trả về với định dạng không nhất quán, làm hỏng bộ phân tích ở phía sau. Cách sửa tốt nhất là gì?",
+    "options": [
+      "Đưa ví dụ về đúng định dạng đầu ra, phân tách các phần bằng thẻ XML, và/hoặc dùng tool/JSON schema cho đầu ra có cấu trúc.",
+      "Tăng temperature.",
+      "Rút ngắn prompt hết mức có thể.",
+      "Nhờ mô hình lịch sự hãy nhất quán."
+    ],
+    "explanation": "Ví dụ và schema là những cách đáng tin cậy nhất để có cấu trúc nhất quán. Hãy kiểm tra cả trong code.",
+    "trap": "Temperature không kiểm soát định dạng."
+  },
+  "models-03": {
+    "stem": "Độ chính xác thấp ở một tác vụ đối soát tài chính nhiều bước. Bạn nên thử điều gì trước?",
+    "options": [
+      "Để mô hình suy luận từng bước trước khi đưa ra đáp án cuối (extended thinking hoặc chain-of-thought tường minh).",
+      "Giảm max_tokens để buộc câu trả lời ngắn gọn.",
+      "Bỏ các ví dụ khỏi prompt.",
+      "Viết chỉ dẫn bằng chữ in hoa."
+    ],
+    "explanation": "Bài toán nhiều bước được lợi từ không gian để suy luận trước khi trả lời.",
+    "trap": "Hạn chế độ dài đầu ra trong một tác vụ suy luận."
+  },
+  "models-04": {
+    "stem": "Một phiên agent chạy dài suy giảm chất lượng khi ngữ cảnh đầy kết quả tool cũ. Hai kỹ thuật nào giúp ích? (Chọn HAI)",
+    "options": [
+      "Tóm tắt hoặc nén lịch sử cũ trong khi giữ lại trạng thái và quyết định quan trọng.",
+      "Xóa hoặc cắt bớt kết quả tool đã cũ; lưu các artifact lớn ở bên ngoài và tham chiếu tới chúng.",
+      "Chỉ tăng max_tokens.",
+      "Lặp lại system prompt nhiều lần.",
+      "Đặt temperature bằng 0."
+    ],
+    "explanation": "Kỹ thuật ngữ cảnh: giữ cửa sổ tập trung vào những gì quan trọng ngay lúc này.",
+    "trap": "max_tokens giới hạn độ dài đầu ra, không phải ngữ cảnh đầu vào."
+  },
+  "models-05": {
+    "stem": "Điều gì phải đúng để một yêu cầu trúng prompt cache?",
+    "options": [
+      "Yêu cầu phải bắt đầu bằng một phần đầu giống hệt (tool, system, các message cho đến điểm ngắt cache) đã được cache gần đây, trong thời gian sống của cache.",
+      "Bất kỳ yêu cầu nào có cách diễn đạt tương tự đều trúng cache.",
+      "Chỉ message của người dùng được cache.",
+      "Caching chỉ hoạt động với batch API."
+    ],
+    "explanation": "Caching khớp theo phần đầu chính xác. Bất kỳ thay đổi nào trước điểm ngắt đều dẫn đến cache miss.",
+    "trap": "Đặt nội dung thay đổi (dấu thời gian, tên người dùng) sớm trong prompt."
+  },
+  "models-06": {
+    "stem": "Một đợt refactor agentic phức tạp trên nhiều tệp phải đạt chất lượng cao nhất có thể; chi phí là thứ yếu. Bậc mô hình nào phù hợp?",
+    "options": [
+      "Mô hình bậc cao nhất (cấp Opus).",
+      "Mô hình nhỏ nhất, để tiết kiệm chi phí.",
+      "Mô hình nào cũng được; chất lượng như nhau.",
+      "Không dùng mô hình; làm thủ công."
+    ],
+    "explanation": "Suy luận khó, nhiều rủi ro và lập trình agentic là nơi mô hình mạnh nhất xứng đáng với mức giá của nó.",
+    "trap": "Mặc định chọn mô hình rẻ nhất khi yêu cầu là chất lượng."
+  },
+  "models-07": {
+    "stem": "Chỉ dẫn ổn định về vai trò và hành vi nên đặt ở đâu, so với dữ liệu theo từng yêu cầu?",
+    "options": [
+      "Vai trò và quy tắc ổn định trong system prompt; đầu vào riêng của tác vụ trong lượt của người dùng.",
+      "Mọi thứ trong lượt của người dùng.",
+      "Mọi thứ trong một assistant prefill.",
+      "Trong mô tả của một tool."
+    ],
+    "explanation": "Sự tách biệt này giữ hành vi nhất quán và làm cho phần ổn định có thể cache được.",
+    "trap": "Trộn quy tắc ổn định với dữ liệu theo từng yêu cầu."
+  },
+  "models-08": {
+    "stem": "Một trợ lý trả lời từ các tài liệu được cung cấp đôi khi bịa ra trích dẫn. Kỹ thuật tốt nhất là gì?",
+    "options": [
+      "Yêu cầu câu trả lời chỉ trích dẫn mã tài liệu (hoặc trích đoạn) từ các tài liệu được cung cấp, cho phép trả lời 'không tìm thấy', và xác minh trích dẫn trong code.",
+      "Tăng temperature lên 1.",
+      "Bỏ các tài liệu để giảm nhầm lẫn.",
+      "Dùng phông chữ lớn hơn trong tài liệu."
+    ],
+    "explanation": "Chỉ dẫn bám căn cứ cộng với một đường 'tôi không biết' rõ ràng làm giảm việc bịa đặt; việc xác minh bằng code bắt những gì lọt qua.",
+    "trap": "Không có đường thoát buộc mô hình phải bịa ra câu trả lời."
+  },
+  "devprod-01": {
+    "stem": "Một nhóm muốn Claude Code tuân theo cùng các lệnh build và quy ước lập trình cho mọi người làm việc trong một repository. Họ nên dùng gì?",
+    "options": [
+      "Một CLAUDE.md của dự án được commit vào repository.",
+      "Ghi chú cá nhân của từng lập trình viên.",
+      "Gõ các quy ước vào đầu mỗi phiên.",
+      "Một trang wiki nằm ngoài repository."
+    ],
+    "explanation": "CLAUDE.md của dự án được nạp tự động và được quản lý phiên bản cùng với code, nên mọi người dùng chung một ngữ cảnh.",
+    "trap": "Ngữ cảnh không được nạp tự động sẽ bị bỏ qua."
+  },
+  "devprod-02": {
+    "stem": "Một nhóm muốn Claude Code trong CI tự động sửa lỗi lint. Cách thiết lập an toàn là gì?",
+    "options": [
+      "Cho phép mọi tool, shell và mạng không hạn chế, với secret production có sẵn.",
+      "Đặc quyền tối thiểu: đưa các tool/lệnh cụ thể cần thiết vào danh sách cho phép, không có secret production, chạy trong môi trường cô lập, và yêu cầu review PR cho các thay đổi.",
+      "Chạy với quyền quản trị viên để tránh lỗi về quyền.",
+      "Tắt log để CI chạy nhanh."
+    ],
+    "explanation": "Tự động hóa trong CI chạy mà không có người theo dõi từng bước, nên quyền hạn phải tối thiểu và đầu ra phải được review.",
+    "trap": "Cấp quyền rộng 'cho tiện'."
+  },
+  "devprod-03": {
+    "stem": "Quy tắc quyền dùng chung của nhóm nên đặt ở đâu, so với các ghi đè cá nhân của một lập trình viên?",
+    "options": [
+      "Quy tắc dùng chung trong .claude/settings.json (được commit); ghi đè cá nhân trong .claude/settings.local.json (không commit).",
+      "Cả hai đều được commit trong cùng một tệp.",
+      "Chỉ dùng biến môi trường.",
+      "Trong CLAUDE.md."
+    ],
+    "explanation": "Claude Code tách cài đặt dự án dùng chung khỏi cài đặt cá nhân cục bộ chính vì lý do này.",
+    "trap": "Trộn sở thích cá nhân vào tệp dùng chung."
+  },
+  "devprod-04": {
+    "stem": "Một tổ chức đang triển khai Claude Code cho 200 kỹ sư. Hai hành động nào tốt nhất? (Chọn HAI)",
+    "options": [
+      "Bắt đầu với một nhóm thí điểm, cung cấp tài liệu hướng dẫn và đào tạo, và thu thập phản hồi.",
+      "Dùng managed policy settings của tổ chức để đặt hàng rào bảo vệ, ví dụ chặn các lệnh nguy hiểm và phê duyệt MCP server.",
+      "Để mọi người cài bất kỳ MCP server nào họ tìm thấy.",
+      "Bỏ qua đào tạo; công cụ này trực quan.",
+      "Chia sẻ một API key trong chat của nhóm."
+    ],
+    "explanation": "Hỗ trợ làm quen cộng với hàng rào bảo vệ tập trung giúp áp dụng mà không có rủi ro không kiểm soát.",
+    "trap": "MCP server không kiểm soát và credential dùng chung."
+  },
+  "devprod-05": {
+    "stem": "Một lập trình viên muốn Claude Code đọc hệ thống ticket nội bộ. Cách tiếp cận đúng là gì?",
+    "options": [
+      "Cấu hình một MCP server đã được kiểm duyệt cho hệ thống ticket (ví dụ trong .mcp.json của dự án) với token có phạm vi hẹp.",
+      "Dán access token vào chat.",
+      "Chia sẻ ảnh chụp màn hình các ticket.",
+      "Gửi email các bản xuất ticket cho Claude."
+    ],
+    "explanation": "MCP cung cấp một kết nối được xác định và có phân quyền; credential không nằm trong cuộc hội thoại.",
+    "trap": "Token trong chat."
+  },
+  "devprod-06": {
+    "stem": "Một lệnh phá hủy nào đó không bao giờ được chạy từ Claude Code, kể cả khi một prompt yêu cầu. Biện pháp kiểm soát đáng tin cậy là gì?",
+    "options": [
+      "Một quy tắc deny trong cài đặt quyền, hoặc một hook PreToolUse chặn lệnh đó.",
+      "Một câu trong prompt.",
+      "Tin vào phán đoán của mô hình.",
+      "Một ghi chú trong CLAUDE.md."
+    ],
+    "explanation": "Cài đặt và hook được công cụ thực thi một cách tất định. Chỉ dẫn bằng văn bản thì không.",
+    "trap": "Các 'biện pháp kiểm soát' dựa trên chỉ dẫn."
+  },
+  "devprod-07": {
+    "stem": "Nhóm chạy cùng một workflow Claude nhiều bước mỗi tuần để tạo release notes. Họ nên làm cho nó lặp lại được như thế nào?",
+    "options": [
+      "Lưu nó thành một slash command tùy chỉnh hoặc skill trong repository.",
+      "Gõ lại prompt mỗi tuần.",
+      "Ghi nhớ các bước.",
+      "Giữ ảnh chụp màn hình phiên của tuần trước."
+    ],
+    "explanation": "Các lệnh có quản lý phiên bản, tái sử dụng được giúp workflow nhất quán và chia sẻ được.",
+    "trap": "Dựa vào trí nhớ cho các workflow lặp lại."
+  },
+  "devprod-08": {
+    "stem": "Thành công của việc triển khai Claude Code nên được đo như thế nào?",
+    "options": [
+      "Mức độ áp dụng cộng với các chỉ số kết quả (ví dụ thời gian chu kỳ PR, phát hiện khi review, khảo sát lập trình viên) so với mức cơ sở.",
+      "Số lượng seat đã mua.",
+      "Số token tiêu thụ.",
+      "Những câu chuyện của người dùng nhiệt tình."
+    ],
+    "explanation": "Kết quả so với mức cơ sở cho thấy việc triển khai có mang lại giá trị hay không.",
+    "trap": "Chỉ số hoạt động."
+  }
+}

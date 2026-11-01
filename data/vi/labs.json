@@ -1,0 +1,102 @@
+{
+  "L1": {
+    "title": "Routing workflow so với một prompt khổng lồ",
+    "goal": "Thấy vì sao workflow phân loại rồi định tuyến tốt hơn một prompt khổng lồ duy nhất hoặc một agent tự chủ khi các nhóm đã biết trước.",
+    "concept": "Bước 1: mô hình nhanh phân loại tin nhắn thành nhóm, mức khẩn và ngôn ngữ dưới dạng JSON. Bước 2: tin nhắn được chuyển tới một prompt playbook ngắn, chuyên biệt trên mô hình cân bằng. Mỗi bước nhỏ, kiểm thử được và có thể dùng một mô hình khác nhau.",
+    "takeaways": [
+      "Nhóm đã biết trước → workflow, không phải agent.",
+      "Phân loại chạy trên mô hình rẻ nhất; chỉ bước trả lời dùng mô hình lớn hơn.",
+      "Mỗi playbook có thể được đánh giá và thay đổi độc lập."
+    ]
+  },
+  "L2": {
+    "title": "Các bậc mô hình: chất lượng, độ trễ, chi phí",
+    "goal": "Đo cùng một tác vụ trên bậc nhanh, cân bằng và cao cấp để việc chọn mô hình có số liệu làm căn cứ.",
+    "concept": "Cùng một prompt được gửi tới cả ba bậc. So sánh câu trả lời, độ trễ, lượng token và chi phí ước tính (giá có thể chỉnh trong Cài đặt). Kỳ thi đánh giá cao 'mô hình rẻ nhất đạt ngưỡng chất lượng', kèm việc chuyển các ca khó lên bậc cao hơn.",
+    "takeaways": [
+      "Ghi lại độ trễ và chi phí — đó là lập luận kinh doanh của bạn.",
+      "Nếu bậc nhanh làm đúng, đó là mặc định; đẩy các ca khó lên cao hơn.",
+      "Đáp án đúng: 1,850,000 × (1 + 0.38×0.12) = 1,934,360 → ×1.04 = 2,011,734 → 2,012,000 VND."
+    ]
+  },
+  "L3": {
+    "title": "Prompt caching trên phần đầu ổn định",
+    "goal": "Quan sát cache_creation_input_tokens ở lần gọi đầu và cache_read_input_tokens ở lần gọi thứ hai.",
+    "concept": "Một sổ tay chính sách dài (khoảng 5.000 token) được gửi như một khối system có cache_control. Lần gọi đầu ghi nó vào cache; lần gọi thứ hai trong thời gian sống của cache với một câu hỏi khác sẽ đọc nó. Bất kỳ thay đổi nào trước điểm ngắt đều là cache miss.",
+    "takeaways": [
+      "Nội dung ổn định đặt trước, nội dung thay đổi đặt sau.",
+      "Cache hit cần phần đầu giống hệt nhau trong thời gian sống của cache.",
+      "Phần đầu quá ngắn sẽ dưới độ dài tối thiểu có thể cache và sẽ không được cache."
+    ]
+  },
+  "L4": {
+    "title": "Tool use có cổng phê duyệt của con người",
+    "goal": "Chạy một vòng lặp tool-use thật: tool đọc chạy tự do, tool ghi hỏi bạn (con người) trước, và lỗi trả về dưới dạng is_error.",
+    "concept": "Claude có hai tool: get_shipment_status (đọc) và reschedule_delivery (ghi). Ứng dụng thực thi các tool cục bộ trên dữ liệu TMS giả lập. Trước mỗi lần dời lịch, một hộp thoại yêu cầu bạn phê duyệt. Nếu bạn từ chối, tool trả về is_error và Claude phải nói thật với khách hàng. Hãy thử lô hàng MF-9999 để thấy lỗi không tìm thấy.",
+    "takeaways": [
+      "Việc phê duyệt được thực thi trong code (lớp tool), không phải trong prompt.",
+      "Kết quả is_error ngăn mô hình lấp chỗ trống bằng phỏng đoán.",
+      "Đầu vào (mã lô hàng, ngày ISO) được kiểm tra trong tool trước khi có bất kỳ điều gì xảy ra."
+    ]
+  },
+  "L5": {
+    "title": "Xây MCP server MekongFreight",
+    "goal": "Bọc TMS (giả lập) một lần dưới dạng MCP server mà Claude Code và các client khác có thể dùng chung.",
+    "concept": "Dùng Python MCP SDK chính thức (FastMCP). Tool đọc và tool ghi được tách riêng; tool ghi kiểm tra đầu vào và bị tắt trừ khi một cờ môi trường bật nó. Secret lấy từ biến môi trường. Chạy cục bộ qua stdio với Claude Code, rồi suy nghĩ xem điều gì thay đổi với một server từ xa dùng chung.",
+    "takeaways": [
+      "Một server, nhiều trợ lý.",
+      "Secret nằm trong môi trường của server, không bao giờ trong prompt hay schema.",
+      "stdio cho dùng cục bộ; Streamable HTTP có xác thực cho dùng chung."
+    ]
+  },
+  "L6": {
+    "title": "RAG có trích dẫn và một cái bẫy truy xuất",
+    "goal": "Thấy một lỗi truy xuất: chính sách hoàn tiền cũ năm 2023 có thể thắng ở bước truy xuất. Sau đó kiểm tra trích dẫn trong code.",
+    "concept": "Một bộ truy xuất từ khóa nhỏ chọn 2 trong 5 tài liệu. Claude chỉ được trả lời từ các tài liệu đó và trích dẫn mã tài liệu, hoặc nói rằng không có câu trả lời. Sau đó ứng dụng xác minh trích dẫn bằng code. Hãy thử 'refund within how many days' so với 'current 2026 refund policy days' và so sánh những gì được truy xuất.",
+    "takeaways": [
+      "Câu trả lời sai + tài liệu đúng nằm trong chỉ mục = vấn đề truy xuất, không phải vấn đề của mô hình.",
+      "Sửa bằng metadata (phiên bản, ngày hiệu lực) và vệ sinh chỉ mục, không phải thêm chunk.",
+      "Cho mô hình một đường 'không tìm thấy' rõ ràng; xác minh trích dẫn bằng code."
+    ]
+  },
+  "L7": {
+    "title": "Code grader + LLM-as-judge",
+    "goal": "Chấm một bộ golden set nhỏ theo hai cách và tìm những chỗ hai bộ chấm không đồng ý.",
+    "concept": "Với mỗi ca, mô hình nhanh trả lời. Một code grader kiểm tra các dữ kiện bắt buộc có xuất hiện không. Sau đó mô hình cân bằng đóng vai judge với một rubric và trả về điểm 1–5 dưới dạng JSON. Kiểm tra tất định rẻ tiền trước; judge xử lý phần code không làm được (giọng điệu, mức hữu ích). Một judge thật phải được hiệu chỉnh so với nhãn của con người.",
+    "takeaways": [
+      "Dùng code grader cho mọi thứ mang tính tất định.",
+      "Báo cáo theo từng ca/nhóm, không chỉ điểm trung bình.",
+      "Khi judge và code grader không đồng ý, hãy tự đọc kết quả."
+    ]
+  },
+  "L8": {
+    "title": "Che thông tin trước khi tới mô hình + nhật ký kiểm toán",
+    "goal": "Dữ liệu cá nhân bị loại bỏ trong code trước khi bất cứ thứ gì rời khỏi máy của bạn, và mỗi lần gọi để lại một bản ghi kiểm toán.",
+    "concept": "Email, số điện thoại Việt Nam và số căn cước 12 chữ số được thay bằng placeholder bằng regex. Chỉ văn bản đã che mới được gửi tới Claude. Một dòng kiểm toán ghi lại hash của bản gốc (không phải chính bản gốc), số lượng đã che và mô hình. Đây là biện pháp kiểm soát trong code — không phải câu 'xin đừng lặp lại dữ liệu cá nhân' trong prompt.",
+    "takeaways": [
+      "Tối thiểu hóa trước khi gửi; mô hình không thể làm lộ thứ nó chưa bao giờ nhận được.",
+      "Nhật ký kiểm toán chứng minh điều gì đã xảy ra mà không lưu chính dữ liệu nhạy cảm.",
+      "Regex chỉ là điểm khởi đầu — production cần phát hiện đã được kiểm thử và hiểu ngữ cảnh địa phương."
+    ]
+  },
+  "L9": {
+    "title": "Phiếu khảo sát và tiêu chí thành công",
+    "goal": "Luyện mặt tư vấn: biến một yêu cầu mơ hồ thành vấn đề, chỉ số, ràng buộc và kế hoạch theo giai đoạn.",
+    "concept": "Không gọi API. Điền phiếu khảo sát cho MekongFreight dựa trên tình huống. Các câu hỏi về các bên liên quan trong kỳ thi đánh giá cao: khảo sát trước khi thiết kế, mục tiêu đo lường được thay vì lời hứa, review phân tầng theo rủi ro, triển khai theo giai đoạn và bàn giao rõ ràng.",
+    "takeaways": [
+      "Tiêu chí thành công được thống nhất trước khi xây dựng.",
+      "Giải thích các đánh đổi bằng ngôn ngữ kinh doanh, kèm số liệu.",
+      "Bàn giao gồm eval và runbook, không chỉ code."
+    ]
+  },
+  "L10": {
+    "title": "Thiết lập nhóm cho Claude Code",
+    "goal": "Một bộ thiết lập sẵn để sao chép: CLAUDE.md, settings dùng chung và cục bộ có quy tắc deny, .mcp.json và một job CI.",
+    "concept": "Không gọi API. Sao chép các tệp này vào một repo thử và dùng với Claude Code. Chú ý biện pháp nào được công cụ thực thi (quyền, hook) và biện pháp nào chỉ là hướng dẫn (CLAUDE.md).",
+    "takeaways": [
+      "CLAUDE.md = ngữ cảnh dùng chung; settings.json = quy tắc được thực thi.",
+      "settings.local.json cho tùy chỉnh cá nhân, không commit.",
+      "CI: đặc quyền tối thiểu, không có secret production, review PR."
+    ]
+  }
+}

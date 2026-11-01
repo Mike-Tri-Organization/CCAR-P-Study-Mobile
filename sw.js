@@ -1,9 +1,10 @@
 // Offline-first service worker. Bump VERSION when shipping new files or data.
-const VERSION = 'ccarp-v1';
+const VERSION = 'ccarp-v2';
 const SHELL = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
-  'js/app.js', 'js/store.js', 'js/ui.js', 'js/claude.js', 'js/labs.js', 'js/quiz.js', 'js/views.js',
+  'js/app.js', 'js/i18n.js', 'js/lang/vi.js', 'js/store.js', 'js/ui.js', 'js/claude.js', 'js/labs.js', 'js/quiz.js', 'js/views.js',
   'data/domains.json', 'data/questions.json', 'data/plan.json', 'data/labs.json', 'data/case.json',
+  'data/vi/domains.json', 'data/vi/questions.json', 'data/vi/plan.json', 'data/vi/labs.json', 'data/vi/case.json',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 

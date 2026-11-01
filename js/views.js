@@ -5,6 +5,7 @@ import {
 } from './store.js';
 import { h, mount, pct, ring, bars, bullets, chips, toast, download } from './ui.js';
 import * as C from './claude.js';
+import { LANGS, locale, t as T } from './i18n.js';
 import { runLab } from './labs.js';
 
 export const THEMES = [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark'], ['sepia-light', 'Sepia'], ['sepia-dark', 'Sepia dark']];
@@ -41,11 +42,11 @@ export function dashboard(root) {
 
   mount(root,
     h('h1', null, 'Dashboard'),
-    h('p', { class: 'lede' }, new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })),
+    h('p', { class: 'lede' }, new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })),
     h('div', { class: 'card accent' },
       h('div', { class: 'eyebrow' }, 'Exam sprint'),
-      h('div', { class: 'big' }, left > 0 ? `${left} days` : left === 0 ? 'Today' : 'Past target'),
-      h('p', { class: 'small' }, `Target ${store.plan.examTarget} · plan ${doneN}/${tasks.length} tasks done`)),
+      h('div', { class: 'big' }, left > 0 ? T('{n} days', { n: left }) : left === 0 ? 'Today' : 'Past target'),
+      h('p', { class: 'small' }, T('Target {date} · plan {done}/{total} tasks done', { date: store.plan.examTarget, done: doneN, total: tasks.length }))),
     h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, 'Readiness'),
       h('div', { class: 'ringrow' },
@@ -63,8 +64,8 @@ export function dashboard(root) {
       h('a', { class: 'link', href: '#/plan' }, 'Open full plan')),
     focus && h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, 'Focus next'),
-      h('p', null, dot(focus.d.id), h('b', null, focus.d.name), ` · ${focus.d.weight}% of the exam`),
-      h('p', { class: 'small' }, focus.acc == null ? 'Not started.' : `Accuracy ${pct(focus.acc)}`),
+      h('p', null, dot(focus.d.id), h('b', null, focus.d.name), T(' · {w}% of the exam', { w: focus.d.weight })),
+      h('p', { class: 'small' }, focus.acc == null ? 'Not started.' : T('Accuracy {p}', { p: pct(focus.acc) })),
       h('a', { class: 'btn', href: '#/practice/' + focus.d.id }, 'Practice this domain')),
     h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, 'Domain accuracy'),
@@ -73,7 +74,7 @@ export function dashboard(root) {
         return h('div', { class: 'meter' },
           h('div', { class: 'meter-top' }, h('span', null, dot(d.id), d.name, h('span', { class: 'small' }, ` ${d.weight}%`)), h('span', null, pct(a))),
           h('div', { class: 'meter-bar' }, h('div', { class: a >= 0.8 ? 'good' : '', style: `width:${(a || 0) * 100}%` })),
-          h('div', { class: 'small' }, `${s.seen}/${s.total} seen`));
+          h('div', { class: 'small' }, T('{a}/{b} seen', { a: s.seen, b: s.total })));
       })),
     p.mocks.length > 0 && h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, 'Mock exams'),
@@ -100,7 +101,7 @@ function taskRow(t) {
   const row = h('div', { class: 'task' + (done ? ' done' : '') },
     box,
     h('label', { for: 'task-' + t.id },
-      h('span', { class: 'small' }, t.date.slice(5) + ' · ' + t.kind + ' '), t.domain && dot(t.domain), t.text),
+      h('span', { class: 'small' }, t.date.slice(5) + ' · ' + T(t.kind) + ' '), t.domain && dot(t.domain), t.text),
     href && h('a', { class: 'link', href }, 'Open'));
   return row;
 }
@@ -116,12 +117,12 @@ export function plan(root) {
     store.plan.weeks.map((w) => {
       const done = w.tasks.filter((t) => store.progress.planDone.includes(t.id)).length;
       return h('details', { class: 'card week', open: open.has(w.number) },
-        h('summary', null, h('b', null, `Week ${w.number}: ${w.title}`),
+        h('summary', null, h('b', null, T('Week {n}: {title}', { n: w.number, title: w.title })),
           h('span', { class: 'small' }, ` ${w.dates} · ${done}/${w.tasks.length}`)),
         h('p', { class: 'small' }, w.goal),
         w.tasks.map(taskRow));
     }),
-    h('p', { class: 'small' }, `${tasks.filter((t) => store.progress.planDone.includes(t.id)).length}/${tasks.length} tasks done`));
+    h('p', { class: 'small' }, T('{a}/{b} tasks done', { a: tasks.filter((x) => store.progress.planDone.includes(x.id)).length, b: tasks.length })));
 }
 
 // ======================================================================== domains
@@ -147,7 +148,7 @@ export function caseStudy(root) {
   const c = store.caseStudy;
   const notes = store.progress.caseNotes;
   mount(root,
-    h('h1', null, `Case study — ${c.company}`),
+    h('h1', null, T('Case study — {company}', { company: c.company })),
     h('p', { class: 'lede' }, c.tagline),
     h('div', { class: 'card accent' }, h('div', { class: 'eyebrow' }, 'Background'), h('p', null, c.background)),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Facts'), bullets(c.facts)),
@@ -168,12 +169,12 @@ export function caseStudy(root) {
           h('button', {
             class: 'btn ghost', type: 'button',
             onClick: (e) => {
-              if (slot.firstChild) { slot.replaceChildren(); e.target.textContent = 'Show model answer'; return; }
+              if (slot.firstChild) { slot.replaceChildren(); e.target.textContent = T('Show model answer'); return; }
               slot.replaceChildren(h('div', { class: 'card good-soft' }, h('div', { class: 'eyebrow good' }, 'Model answer'), h('p', null, dec.modelAnswer)));
-              e.target.textContent = 'Hide model answer';
+              e.target.textContent = T('Hide model answer');
             },
           }, 'Show model answer'),
-          ...(dec.labs || []).map((l) => h('a', { class: 'link', href: '#/labs/' + l }, 'Lab ' + l))),
+          ...(dec.labs || []).map((l) => h('a', { class: 'link', href: '#/labs/' + l }, T('Lab {id}', { id: l })))),
         slot);
     }));
 }
@@ -234,7 +235,7 @@ export function labs(root, arg) {
       }
       codeBox.textContent = codeCache[lab.file];
     },
-  }, 'View ' + lab.file);
+  }, T('View {file}', { file: lab.file }));
 
   mount(root,
     h('a', { class: 'link', href: '#/labs' }, '← All labs'),
@@ -250,7 +251,8 @@ export function labs(root, arg) {
 
 // ======================================================================== settings
 
-export function settingsView(root, applyTheme) {
+export function settingsView(root, hooks) {
+  const { applyTheme, applyLang } = hooks;
   const S = settings();
   const keyIn = h('input', { class: 'input', type: 'password', autocomplete: 'off', placeholder: 'sk-ant-…', 'aria-label': 'Claude API key' });
   keyIn.value = getApiKey();
@@ -264,8 +266,8 @@ export function settingsView(root, applyTheme) {
 
   const fileIn = h('input', { type: 'file', accept: 'application/json,.json', hidden: true });
   fileIn.addEventListener('change', async () => {
-    try { importProgress(await fileIn.files[0].text()); toast('Progress imported'); settingsView(root, applyTheme); }
-    catch (e) { toast('Import failed: ' + e.message); }
+    try { importProgress(await fileIn.files[0].text()); toast('Progress imported'); settingsView(root, hooks); }
+    catch (e) { toast(T('Import failed: {m}', { m: e.message })); }
   });
 
   const test = h('button', {
@@ -273,7 +275,7 @@ export function settingsView(root, applyTheme) {
     onClick: async () => {
       setApiKey(keyIn.value);
       test.disabled = true;
-      try { const r = await C.send(C.body(S.modelFast, '', 'Reply with the single word: ok', 10)); toast('Connected: ' + r.model); }
+      try { const r = await C.send(C.body(S.modelFast, '', 'Reply with the single word: ok', 10)); toast(T('Connected: {m}', { m: r.model })); }
       catch (e) { toast(e.message); }
       finally { test.disabled = false; }
     },
@@ -281,6 +283,11 @@ export function settingsView(root, applyTheme) {
 
   mount(root,
     h('h1', null, 'Settings'),
+    h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Language'),
+      chips(LANGS, S.lang, (v) => { S.lang = v; save(); applyLang(); settingsView(root, hooks); }),
+      h('label', { class: 'check-row' },
+        h('input', { type: 'checkbox', class: 'check', checked: !!S.questionsEnglish, onChange: (e) => { S.questionsEnglish = e.target.checked; save(); applyLang(); } }),
+        h('span', null, 'Show practice and mock questions in English (the exam language)'))),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Theme'),
       chips(THEMES, S.theme, (v) => { S.theme = v; save(); applyTheme(); })),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Claude API key'),
@@ -296,7 +303,7 @@ export function settingsView(root, applyTheme) {
       h('p', { class: 'small' }, 'Prices are placeholders — check current pricing.'),
       h('button', {
         class: 'btn ghost', type: 'button',
-        onClick: () => { Object.assign(S, { ...DEFAULT_SETTINGS, theme: S.theme }); save(); settingsView(root, applyTheme); },
+        onClick: () => { Object.assign(S, { ...DEFAULT_SETTINGS, theme: S.theme }); save(); applyTheme(); applyLang(); settingsView(root, hooks); },
       }, 'Restore defaults')),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Your data'),
       h('p', { class: 'small' }, 'Progress lives on this device. Export a backup file, or import one made on this phone or from another browser.'),
@@ -305,8 +312,8 @@ export function settingsView(root, applyTheme) {
         h('button', { class: 'btn ghost', type: 'button', onClick: () => fileIn.click() }, 'Import'),
         h('button', {
           class: 'btn danger', type: 'button',
-          onClick: () => { if (confirm('Erase all progress on this device?')) { resetProgress(); toast('Progress reset'); settingsView(root, applyTheme); } },
+          onClick: () => { if (confirm(T('Erase all progress on this device?'))) { resetProgress(); toast('Progress reset'); applyTheme(); applyLang(); settingsView(root, hooks); } },
         }, 'Reset progress')),
       fileIn),
-    h('p', { class: 'small center' }, `${store.questions.length} questions · ${store.labs.length} labs · v1.0.0`));
+    h('p', { class: 'small center' }, T('{q} questions · {l} labs · v{v}', { q: store.questions.length, l: store.labs.length, v: '1.1.0' })));
 }
