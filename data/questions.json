@@ -1,0 +1,744 @@
+[
+  {
+    "id": "integ-01", "domain": "integ",
+    "stem": "A retail client wants Claude to look up order status in its internal order management system (OMS), which exposes a REST API. Three other internal teams also plan Claude assistants that need the same OMS data. What should the architect recommend?",
+    "options": [
+      "Export OMS data nightly and paste it into each assistant's system prompt.",
+      "Build one MCP server that wraps the OMS API with read-only tools, and let every assistant connect to it.",
+      "Fine-tune a model on historical OMS records so it knows order statuses.",
+      "Give each assistant the OMS database connection string in its system prompt so it can query directly."
+    ],
+    "answer": [1],
+    "explanation": "An MCP server wraps the system once with a defined, permissioned tool surface and is reused by every assistant. Live data stays live, credentials stay in the server, and the tools can be scoped to read-only.",
+    "trap": "Static exports go stale; fine-tuning does not give live data; credentials must never be in model context."
+  },
+  {
+    "id": "integ-02", "domain": "integ",
+    "stem": "An MCP server used by a support assistant exposes get_customer, search_orders and delete_customer. Security review flags the delete tool. What is the BEST mitigation?",
+    "options": [
+      "Add 'Only call delete_customer if you are absolutely sure' to the tool description.",
+      "Remove delete_customer from this server; if deletion is needed, expose it through a separate, narrowly scoped server that requires human approval.",
+      "Set temperature to 0 so the model never calls the tool by accident.",
+      "Keep the tool but log every call for later review."
+    ],
+    "answer": [1],
+    "explanation": "Least privilege: the support assistant should not have a destructive capability at all. Where deletion is genuinely needed, isolate it with its own scoped credentials and an approval gate.",
+    "trap": "A sentence in a tool description is guidance, not a control. Logging alone detects but does not prevent."
+  },
+  {
+    "id": "integ-03", "domain": "integ",
+    "stem": "A RAG assistant gives an outdated refund policy. The current policy document IS in the index, but logs show the retrieved chunks come from the 2023 version. Which TWO actions address the root cause? (Select TWO)",
+    "options": [
+      "Add version/effective-date metadata and filter or boost the current version at retrieval time.",
+      "Switch to the largest available model.",
+      "Remove superseded documents from the index or mark them deprecated so they are excluded.",
+      "Increase max_tokens on the generation call.",
+      "Retrieve 50 chunks instead of 5 so the right one is included somewhere."
+    ],
+    "answer": [0, 2],
+    "explanation": "This is a retrieval problem: the wrong version wins. Fix it with metadata filtering and index hygiene. The model answered faithfully from what it was given.",
+    "trap": "Bigger models and more chunks treat a retrieval problem as a generation problem, and more chunks add noise and cost."
+  },
+  {
+    "id": "integ-04", "domain": "integ",
+    "stem": "A shipment-status tool intermittently gets HTTP 503 from the downstream API. When that happens the agent sometimes invents a status. What is the BEST design fix?",
+    "options": [
+      "Retry with backoff inside the tool layer; if it still fails, return a structured error tool_result (is_error) that tells the model the service is unavailable so it reports that to the user.",
+      "Catch the error and return an empty success response so the conversation is not interrupted.",
+      "Add 'never hallucinate' to the system prompt.",
+      "Switch to a larger model, which is less likely to invent data."
+    ],
+    "answer": [0],
+    "explanation": "Handle transient failures deterministically in code, and when the tool truly fails, tell the model explicitly with an error result. The model then has true information to report instead of a gap to fill.",
+    "trap": "An empty 'success' invites fabrication; prompts and bigger models do not fix missing information."
+  },
+  {
+    "id": "integ-05", "domain": "integ",
+    "stem": "An MCP server must call a CRM API that requires an OAuth client secret. Where should the secret live?",
+    "options": [
+      "In the system prompt, so Claude can include it in tool arguments.",
+      "In the MCP server's runtime environment or a secret manager, never exposed in model context or tool schemas.",
+      "As a default value in the tool's input schema.",
+      "In the project's CLAUDE.md so every developer has it."
+    ],
+    "answer": [1],
+    "explanation": "The model never needs the secret. The server authenticates on its own using credentials from its environment or a secret manager.",
+    "trap": "Anything in context, schemas or committed files can leak through outputs, logs or the repository."
+  },
+  {
+    "id": "integ-06", "domain": "integ",
+    "stem": "An orchestrator agent delegates research to five subagents. Each returns its full working transcript, and the orchestrator's context overflows. What is the best fix?",
+    "options": [
+      "Have each subagent return a concise structured summary (findings, evidence references, open questions) instead of its full transcript.",
+      "Only rely on a larger context window.",
+      "Run the subagents sequentially instead of in parallel.",
+      "Remove the orchestrator and let subagents talk to the user directly."
+    ],
+    "answer": [0],
+    "explanation": "Part of the value of subagents is context isolation: they do the messy work in their own context and hand back distilled results. Full transcripts throw that benefit away.",
+    "trap": "A larger window postpones the problem and raises cost; sequential execution doesn't reduce the volume returned."
+  },
+  {
+    "id": "integ-07", "domain": "integ",
+    "stem": "A company wants one MCP server for its ticketing system that hundreds of employees can use from Claude, with per-user authentication. Which deployment fits?",
+    "options": [
+      "A stdio server that each employee runs locally with a shared admin token.",
+      "A remote MCP server over Streamable HTTP with proper authentication (for example OAuth), so each user connects with their own identity.",
+      "Copy the ticket database to each laptop nightly.",
+      "Embed the ticket API documentation in the system prompt."
+    ],
+    "answer": [1],
+    "explanation": "stdio is for local, single-user processes. A shared, centrally operated server with per-user auth is a remote server over HTTP.",
+    "trap": "A shared admin token removes per-user accountability and violates least privilege."
+  },
+  {
+    "id": "integ-08", "domain": "integ",
+    "stem": "Claude occasionally calls a booking tool with malformed arguments, for example dates as '12/03' instead of ISO dates. Which TWO changes are most effective? (Select TWO)",
+    "options": [
+      "Tighten the tool's input schema and description: specify the format, use enums where possible, and give an example value.",
+      "Validate inputs in the tool and return a descriptive error so the model can correct the call.",
+      "Raise the temperature so the model explores different formats.",
+      "Shorten the tool description to save tokens.",
+      "Enable streaming."
+    ],
+    "answer": [0, 1],
+    "explanation": "Clear schemas reduce errors up front; server-side validation with useful error messages catches the rest and lets the model self-correct.",
+    "trap": "Shorter descriptions usually make tool use worse; temperature and streaming are unrelated."
+  },
+
+  {
+    "id": "design-01", "domain": "design",
+    "stem": "An insurer needs to extract 12 fixed fields from standardized claim forms, about 50,000 per day. Steps are identical every time and results feed a downstream review queue. Which pattern fits best?",
+    "options": [
+      "An autonomous multi-agent system that decides how to process each form.",
+      "A single structured-output call per document (for example a tool/JSON schema), run in a batch pipeline.",
+      "A chat interface where staff paste each form.",
+      "An agent with web browsing to verify each claim."
+    ],
+    "answer": [1],
+    "explanation": "The task is well defined and repetitive: one call with a schema per document is the simplest reliable design, and batch processing suits the volume.",
+    "trap": "Agents add cost, latency and variance without benefit when the steps are fixed."
+  },
+  {
+    "id": "design-02", "domain": "design",
+    "stem": "Support tickets fall into five categories, each with a different handling playbook. Which design is most appropriate?",
+    "options": [
+      "A routing workflow: classify the ticket first, then send it to a prompt/handler specialized for that category.",
+      "One very large prompt containing all five playbooks for every ticket.",
+      "A fully autonomous agent that decides its own process for each ticket.",
+      "Fine-tune five separate models."
+    ],
+    "answer": [0],
+    "explanation": "Routing separates concerns: each specialized prompt is simpler, easier to test and can use a different model. Classification can run on a small, fast model.",
+    "trap": "One giant prompt dilutes instructions; an agent is unnecessary when the categories are known."
+  },
+  {
+    "id": "design-03", "domain": "design",
+    "stem": "A client wants open-ended competitive research: the number of sources and steps cannot be known in advance. What is the most appropriate design?",
+    "options": [
+      "A fixed three-step prompt chain.",
+      "An agent with search and fetch tools running in a loop, with explicit stopping criteria and a budget.",
+      "A single prompt asking for the complete analysis.",
+      "A scheduled script with fixed URLs."
+    ],
+    "answer": [1],
+    "explanation": "When the path depends on what is found along the way, an agent loop is justified. Budgets and stop criteria keep cost and runtime under control.",
+    "trap": "Fixed chains can't adapt; a single call has no way to gather new information."
+  },
+  {
+    "id": "design-04", "domain": "design",
+    "stem": "When is a multi-agent architecture most justified?",
+    "options": [
+      "Whenever the business considers the task important.",
+      "When subtasks are largely independent and parallelizable and benefit from separate contexts, enough to outweigh the extra cost and coordination.",
+      "Always, because more agents reduce token cost.",
+      "When the team wants to avoid writing evaluations."
+    ],
+    "answer": [1],
+    "explanation": "Multi-agent systems use more tokens and add coordination complexity. They earn that cost on broad, parallelizable work where context isolation helps.",
+    "trap": "Importance is not a reason; multi-agent usually increases cost."
+  },
+  {
+    "id": "design-05", "domain": "design",
+    "stem": "A client asks for 'an AI agent' to answer employee questions from a 40-page HR handbook that changes twice a year. Which TWO recommendations are best? (Select TWO)",
+    "options": [
+      "Start simple: one call with the handbook in context, using prompt caching for the stable handbook prefix.",
+      "Build a planner-executor multi-agent system.",
+      "Agree success criteria and build an evaluation set of real employee questions before building.",
+      "Fine-tune a model on the handbook immediately.",
+      "Build a custom vector database first, regardless of document size."
+    ],
+    "answer": [0, 2],
+    "explanation": "A 40-page document fits in context, so long-context plus caching is simplest. Success criteria and evals come first in any design.",
+    "trap": "'Agent' in the request is not a requirement. RAG infrastructure isn't needed when the corpus fits."
+  },
+  {
+    "id": "design-06", "domain": "design",
+    "stem": "A product needs inline text suggestions with latency under 2 seconds at very high request volume. Which choice fits?",
+    "options": [
+      "The top-tier model with extended thinking enabled.",
+      "A small, fast model with a short prompt and streaming, plus prompt caching for any stable prefix.",
+      "A multi-agent pipeline that drafts and critiques each suggestion.",
+      "The asynchronous batch API."
+    ],
+    "answer": [1],
+    "explanation": "Tight latency and high volume point to the smallest model that meets the quality bar, short prompts and streaming.",
+    "trap": "Batch processing is asynchronous; thinking and critique loops add latency."
+  },
+  {
+    "id": "design-07", "domain": "design",
+    "stem": "Every night a company must summarize about 200,000 support transcripts. Results are needed by the next morning and cost matters. What fits best?",
+    "options": [
+      "The Message Batches API, which processes requests asynchronously at a discounted price.",
+      "Real-time calls at maximum concurrency.",
+      "An agent that reads all transcripts in one long session.",
+      "Streaming responses to a dashboard."
+    ],
+    "answer": [0],
+    "explanation": "Large, non-urgent volume is exactly the batch use case: lower cost, no need to manage concurrency, results within the processing window.",
+    "trap": "Real-time concurrency costs more and needs rate-limit management for no benefit here."
+  },
+  {
+    "id": "design-08", "domain": "design",
+    "stem": "An agent can issue customer refunds. Policy: refunds over $500 require manager approval. Where should this rule be enforced?",
+    "options": [
+      "In the system prompt, stated clearly and repeated.",
+      "In the refund tool/business-logic layer, which checks the amount and routes large refunds to an approval workflow regardless of what the model requests.",
+      "Through few-shot examples of correct refund handling.",
+      "By setting temperature to 0."
+    ],
+    "answer": [1],
+    "explanation": "Hard business rules are enforced deterministically in code. The model can propose; the system decides.",
+    "trap": "Prompt instructions can be ignored or manipulated; they are not controls."
+  },
+
+  {
+    "id": "eval-01", "domain": "eval",
+    "stem": "A team is about to build a contract-summary feature. Stakeholders only say 'make it good'. What should happen first?",
+    "options": [
+      "Define measurable success criteria with stakeholders and build a representative labeled eval set, including edge cases.",
+      "Ship a first version and collect feedback.",
+      "Choose the largest model to maximize quality.",
+      "Write a longer, more detailed prompt."
+    ],
+    "answer": [0],
+    "explanation": "Without agreed criteria and an eval set there is no way to tell whether any change helps. This also anchors stakeholder expectations.",
+    "trap": "Building before success criteria are agreed is one of the most common exam traps."
+  },
+  {
+    "id": "eval-02", "domain": "eval",
+    "stem": "You need to check, at scale, whether outputs are valid JSON containing required keys with correct types. Which grader fits best?",
+    "options": [
+      "Human review of a sample.",
+      "A code-based grader that parses the JSON and validates it against a schema.",
+      "An LLM-as-judge with a rubric.",
+      "User thumbs-up ratings."
+    ],
+    "answer": [1],
+    "explanation": "Deterministic properties are graded deterministically: code graders are fast, cheap and exact.",
+    "trap": "Using an LLM judge for something code can check adds cost and variance."
+  },
+  {
+    "id": "eval-03", "domain": "eval",
+    "stem": "You need to grade the helpfulness and tone of thousands of support replies per week. What is the best approach?",
+    "options": [
+      "Exact string match against reference replies.",
+      "An LLM-as-judge with a specific rubric, calibrated against a human-labeled sample.",
+      "BLEU score against reference replies only.",
+      "Skip evaluation; tone is subjective."
+    ],
+    "answer": [1],
+    "explanation": "Subjective qualities at scale suit an LLM judge, but only after checking that it agrees with human raters on a labeled sample.",
+    "trap": "String-overlap metrics don't capture tone; 'subjective' is not a reason to skip evaluation."
+  },
+  {
+    "id": "eval-04", "domain": "eval",
+    "stem": "A RAG system gives wrong answers on 15% of eval questions. Which TWO steps best determine whether retrieval or generation is at fault? (Select TWO)",
+    "options": [
+      "Measure retrieval separately: for each failing question, check whether the gold passage appears in the retrieved set (recall@k).",
+      "For failures where the gold passage WAS retrieved, inspect whether the answer is faithful to that context.",
+      "Switch to a larger model and compare.",
+      "Increase max_tokens.",
+      "Add more few-shot examples."
+    ],
+    "answer": [0, 1],
+    "explanation": "Split the pipeline: if the right passage never arrived, fix retrieval; if it arrived and the answer is still wrong, fix generation.",
+    "trap": "Changing the model before locating the failure wastes time and may not help."
+  },
+  {
+    "id": "eval-05", "domain": "eval",
+    "stem": "After a prompt change, the average judge score rose 3%, but two business-critical categories dropped noticeably. What should you do?",
+    "options": [
+      "Ship, because the overall average improved.",
+      "Slice results by category, treat regressions on critical slices as blockers, and add those cases to the regression suite.",
+      "Remove the two categories from the eval set.",
+      "Re-run the eval until the regressions disappear."
+    ],
+    "answer": [1],
+    "explanation": "Averages hide regressions. Critical segments get their own pass criteria.",
+    "trap": "Changing the eval to fit the result, or re-running until it looks good, destroys the eval's value."
+  },
+  {
+    "id": "eval-06", "domain": "eval",
+    "stem": "An LLM judge rates outputs highly, but human reviewers often disagree with it. What is the best mitigation?",
+    "options": [
+      "Trust the judge, since it is more consistent than humans.",
+      "Calibrate the judge: tighten the rubric, measure agreement with human labels, and use techniques such as pairwise comparison with position swapping.",
+      "Raise the judge's temperature.",
+      "Stop human review to save cost."
+    ],
+    "answer": [1],
+    "explanation": "A judge is only useful when it agrees with the humans it stands in for. Measure that agreement and improve the rubric until it is acceptable.",
+    "trap": "Consistency is not correctness."
+  },
+  {
+    "id": "eval-07", "domain": "eval",
+    "stem": "A Claude feature passed its pre-launch evals and is now in production. What evaluation practice should continue?",
+    "options": [
+      "None; pre-launch evals are sufficient.",
+      "Sample production traffic for ongoing evaluation, monitor quality, latency, cost and error/refusal rates, and add real failures to the eval set.",
+      "Track only token cost.",
+      "Wait for user complaints."
+    ],
+    "answer": [1],
+    "explanation": "Real traffic drifts away from the eval set. Ongoing monitoring catches that, and production failures make the best new test cases.",
+    "trap": "Treating evaluation as a one-time gate."
+  },
+  {
+    "id": "eval-08", "domain": "eval",
+    "stem": "Every request sends the same 8,000-token instructions and reference document, followed by a short, different user question. What is the biggest easy cost and latency win?",
+    "options": [
+      "Enable prompt caching on the stable prefix (instructions + document).",
+      "Switch to the top-tier model.",
+      "Delete the instructions.",
+      "Put the user question before the reference document."
+    ],
+    "answer": [0],
+    "explanation": "An identical, large prefix repeated across requests is the ideal case for prompt caching: cached reads are much cheaper and faster than reprocessing.",
+    "trap": "Moving variable content before the stable content would break caching."
+  },
+
+  {
+    "id": "gov-01", "domain": "gov",
+    "stem": "A healthcare client requires that protected health information (PHI) never reaches the application's logging system. What should the architect do?",
+    "options": [
+      "Instruct Claude in the system prompt not to include PHI in its responses.",
+      "Implement redaction/minimization in the application pipeline before logging, restrict log access, and verify with tests.",
+      "Use a larger model that is better at following privacy instructions.",
+      "Ask users not to type PHI."
+    ],
+    "answer": [1],
+    "explanation": "Logging is done by the application, so the control belongs in the application. Compliance needs verifiable controls.",
+    "trap": "A prompt instruction is not a compliance control."
+  },
+  {
+    "id": "gov-02", "domain": "gov",
+    "stem": "An agent reads inbound customer emails and can send outbound emails. Security is concerned about prompt injection hidden in inbound messages. What is the strongest approach?",
+    "options": [
+      "Tell the model in the system prompt to ignore instructions found inside emails.",
+      "Treat inbound content as untrusted data, limit tools (allowlisted recipients/templates), apply least privilege, and require human approval before outbound sends.",
+      "Disable logging of inbound emails.",
+      "Switch to a larger model."
+    ],
+    "answer": [1],
+    "explanation": "Assume injection will sometimes succeed and limit what a manipulated model can do. Prompt hardening helps but is defense-in-depth, not the main control.",
+    "trap": "Prompt-only defenses against injection."
+  },
+  {
+    "id": "gov-03", "domain": "gov",
+    "stem": "The legal team asks how the company will know an AI agent did not take unauthorized actions. Which TWO controls answer this? (Select TWO)",
+    "options": [
+      "Audit logs of prompts, tool calls, parameters, approvals and the acting user's identity.",
+      "Least-privilege, scoped credentials for each tool so unauthorized actions are not possible.",
+      "Asking the model to report what it did at the end of each session.",
+      "A longer system prompt listing forbidden actions.",
+      "Disabling tool-call logging to reduce storage."
+    ],
+    "answer": [0, 1],
+    "explanation": "Prevention (scoped permissions) plus evidence (audit logs). The model's self-report is not evidence.",
+    "trap": "Self-reports and prompt lists are not verifiable controls."
+  },
+  {
+    "id": "gov-04", "domain": "gov",
+    "stem": "A production assistant gave a customer harmful advice. What should happen first, following a sound incident process?",
+    "options": [
+      "Contain (disable or restrict the feature, or roll back), preserve logs and evidence, and notify per the incident process; then do root-cause analysis and add the case to the eval set.",
+      "Delete the conversation logs to limit exposure.",
+      "Immediately retrain a model.",
+      "Ignore it, since it is a single incident."
+    ],
+    "answer": [0],
+    "explanation": "Contain, preserve, notify, then learn. The failing case becomes a permanent regression test.",
+    "trap": "Destroying evidence; skipping containment."
+  },
+  {
+    "id": "gov-05", "domain": "gov",
+    "stem": "An agent drafts and files regulatory submissions. Where should the human-in-the-loop checkpoint go?",
+    "options": [
+      "After every model response.",
+      "Before the irreversible, high-impact action (filing), with the reviewer seeing the full draft and the supporting evidence.",
+      "Nowhere; the agent's accuracy is high on evals.",
+      "Only in a quarterly audit."
+    ],
+    "answer": [1],
+    "explanation": "Put humans where mistakes are expensive or irreversible, and give them what they need to judge.",
+    "trap": "Reviewing everything causes rubber-stamping; reviewing nothing ignores risk."
+  },
+  {
+    "id": "gov-06", "domain": "gov",
+    "stem": "An EU client asks how its Claude application will honor GDPR deletion requests. What is the architect's responsibility?",
+    "options": [
+      "None; the model provider handles it.",
+      "Design the data flows so personal data stored by the application (logs, vector stores, caches, conversation history) can be located and deleted, and document retention.",
+      "Add 'comply with GDPR' to the system prompt.",
+      "Block EU users."
+    ],
+    "answer": [1],
+    "explanation": "The application decides what it stores and where. You can only delete what you can find, so map the data flows.",
+    "trap": "Compliance by prompt."
+  },
+  {
+    "id": "gov-07", "domain": "gov",
+    "stem": "A public chatbot must never reveal internal pricing tiers. What is the strongest approach?",
+    "options": [
+      "A strong instruction in the system prompt.",
+      "Keep internal pricing out of everything the bot can access (data minimization), and add output filtering as defense-in-depth.",
+      "Few-shot examples of refusing pricing questions.",
+      "Temperature 0."
+    ],
+    "answer": [1],
+    "explanation": "The bot cannot leak what it never sees. Minimization beats instruction.",
+    "trap": "Assuming a model will reliably keep a secret it holds."
+  },
+  {
+    "id": "gov-08", "domain": "gov",
+    "stem": "A RAG assistant searches HR documents. Employees may only see documents they are entitled to. How should access control be enforced?",
+    "options": [
+      "Instruct the model to check the user's role before answering.",
+      "Enforce document-level ACLs at retrieval time, filtering by the user's entitlements before anything enters the context.",
+      "Write a separate prompt for each role.",
+      "Trust employees to only ask appropriate questions."
+    ],
+    "answer": [1],
+    "explanation": "Authorization is enforced by the system before data reaches the model, using the authenticated user's identity.",
+    "trap": "Asking the model to do authorization."
+  },
+
+  {
+    "id": "stake-01", "domain": "stake",
+    "stem": "An executive sponsor expects '100% accurate' answers from an AI legal-intake assistant. How should the architect respond?",
+    "options": [
+      "Agree, to keep the project moving.",
+      "Reset expectations: agree measurable accuracy targets per task, define how errors are caught and handled, require human review for high-risk cases, and roll out in phases.",
+      "Decline the project.",
+      "Avoid the topic until launch."
+    ],
+    "answer": [1],
+    "explanation": "Turn an unrealistic goal into measurable targets plus a safety net. This protects the client and the project.",
+    "trap": "Promising perfection, or walking away instead of reframing."
+  },
+  {
+    "id": "stake-02", "domain": "stake",
+    "stem": "What should the FIRST discovery workshop with a new client focus on?",
+    "options": [
+      "Choosing the Claude model.",
+      "Understanding the business problem, users, current process, success metrics, constraints (data, compliance, systems) and volumes.",
+      "Writing a prototype during the meeting.",
+      "Demonstrating a multi-agent system."
+    ],
+    "answer": [1],
+    "explanation": "Design follows the problem. Model choice and architecture come after discovery.",
+    "trap": "Jumping to technology."
+  },
+  {
+    "id": "stake-03", "domain": "stake",
+    "stem": "A business stakeholder asks why the design uses the small, fast model instead of the most capable one. What is the best explanation?",
+    "options": [
+      "The most capable model is unreliable.",
+      "On our eval set the small model meets the agreed quality bar at a fraction of the cost and latency, which makes the volume affordable; hard cases can be routed to a larger model.",
+      "A technical explanation of parameter counts.",
+      "It was the default."
+    ],
+    "answer": [1],
+    "explanation": "Explain trade-offs in business terms, backed by evidence: quality met, cost, speed, and an escalation path.",
+    "trap": "Jargon, or a choice without evidence."
+  },
+  {
+    "id": "stake-04", "domain": "stake",
+    "stem": "A pilot is moving to production. Which TWO lifecycle practices should be in place? (Select TWO)",
+    "options": [
+      "Version prompts and configuration, and run regression evals before every change (change control).",
+      "Staged rollout with monitoring and a tested rollback plan.",
+      "Edit production prompts directly when users report issues.",
+      "Skip documentation until the system stabilizes.",
+      "Launch to all users at once."
+    ],
+    "answer": [0, 1],
+    "explanation": "Change control and staged rollout keep production stable and changes reversible.",
+    "trap": "Live prompt edits are untested production changes."
+  },
+  {
+    "id": "stake-05", "domain": "stake",
+    "stem": "A newer Claude model is released. How should a production system adopt it?",
+    "options": [
+      "Switch production to it immediately.",
+      "Run the eval suite on the new model, compare quality, cost and latency, then canary it with a rollback option.",
+      "Never upgrade a working system.",
+      "Let users choose the model."
+    ],
+    "answer": [1],
+    "explanation": "A model change is a production change: evaluate, compare, canary, keep a rollback.",
+    "trap": "Assuming newer is automatically better for your task, or freezing forever."
+  },
+  {
+    "id": "stake-06", "domain": "stake",
+    "stem": "Compliance wants human review of every AI output; operations wants full automation. What should the architect propose?",
+    "options": [
+      "Side with operations; automation is the point.",
+      "Quantify risk by segment and propose risk-tiered review: human review for high-risk categories, sampling for low-risk ones, with metrics to revisit the thresholds.",
+      "Side with compliance in every case.",
+      "Escalate to leadership without a proposal."
+    ],
+    "answer": [1],
+    "explanation": "A risk-based proposal with data serves both concerns and can be tuned over time.",
+    "trap": "All-or-nothing review."
+  },
+  {
+    "id": "stake-07", "domain": "stake",
+    "stem": "How should the success of a pilot be measured?",
+    "options": [
+      "Number of prompts sent.",
+      "Pre-agreed business metrics (for example handling time, accuracy versus baseline, customer satisfaction) compared with the pre-AI baseline.",
+      "Team impressions.",
+      "Total tokens used."
+    ],
+    "answer": [1],
+    "explanation": "Metrics agreed before the pilot, compared with a baseline, make the go/no-go decision objective.",
+    "trap": "Activity metrics instead of outcome metrics."
+  },
+  {
+    "id": "stake-08", "domain": "stake",
+    "stem": "You are handing a Claude system over to the client's operations team. What should the handoff include?",
+    "options": [
+      "Just the source code.",
+      "A runbook: architecture, prompt/config versions, the eval suite and how to run it, monitoring and alerts, incident and escalation paths, cost controls and ownership.",
+      "A list of shared passwords.",
+      "A recorded demo."
+    ],
+    "answer": [1],
+    "explanation": "Operations needs to run, change, monitor and recover the system without the original builders.",
+    "trap": "Code without evals or operating procedures."
+  },
+
+  {
+    "id": "models-01", "domain": "models",
+    "stem": "You are asking questions about a 30,000-token contract. Where should the document go relative to the instructions and question?",
+    "options": [
+      "Put the long document near the top, and the instructions and question at the end.",
+      "Put the question first, then the document.",
+      "Split the contract into 30 separate calls.",
+      "Order does not matter."
+    ],
+    "answer": [0],
+    "explanation": "Anthropic's long-context guidance: long documents at the top, the query at the end, which tends to improve answer quality.",
+    "trap": "Question-first ordering for long inputs."
+  },
+  {
+    "id": "models-02", "domain": "models",
+    "stem": "Outputs come back in an inconsistent format, breaking a downstream parser. What is the best fix?",
+    "options": [
+      "Give examples of the exact output format, delimit sections with XML tags, and/or use a tool/JSON schema for structured output.",
+      "Increase the temperature.",
+      "Shorten the prompt as much as possible.",
+      "Ask the model politely to be consistent."
+    ],
+    "answer": [0],
+    "explanation": "Examples and schemas are the most reliable ways to get a consistent structure. Validate in code as well.",
+    "trap": "Temperature does not control format."
+  },
+  {
+    "id": "models-03", "domain": "models",
+    "stem": "Accuracy is low on a multi-step financial reconciliation task. What should you try first?",
+    "options": [
+      "Let the model reason step by step before the final answer (extended thinking or explicit chain-of-thought).",
+      "Lower max_tokens to force concise answers.",
+      "Remove the examples from the prompt.",
+      "Write the instructions in capital letters."
+    ],
+    "answer": [0],
+    "explanation": "Multi-step problems benefit from space to reason before answering.",
+    "trap": "Constraining output length on a reasoning task."
+  },
+  {
+    "id": "models-04", "domain": "models",
+    "stem": "A long-running agent session degrades as the context fills with old tool outputs. Which TWO techniques help? (Select TWO)",
+    "options": [
+      "Summarize or compact older history while keeping the key state and decisions.",
+      "Clear or trim stale tool results; store large artifacts externally and reference them.",
+      "Only raise max_tokens.",
+      "Repeat the system prompt several times.",
+      "Set temperature to 0."
+    ],
+    "answer": [0, 1],
+    "explanation": "Context engineering: keep the window focused on what matters now.",
+    "trap": "max_tokens limits output length, not input context."
+  },
+  {
+    "id": "models-05", "domain": "models",
+    "stem": "What must be true for a request to hit the prompt cache?",
+    "options": [
+      "The request must start with an identical prefix (tools, system, messages up to the cache breakpoint) that was cached recently, within the cache lifetime.",
+      "Any request with similar wording will hit the cache.",
+      "Only the user message is cached.",
+      "Caching only works with the batch API."
+    ],
+    "answer": [0],
+    "explanation": "Caching matches exact prefixes. Any change before the breakpoint means a cache miss.",
+    "trap": "Putting variable content (timestamps, user names) early in the prompt."
+  },
+  {
+    "id": "models-06", "domain": "models",
+    "stem": "A complex agentic refactor across many files must be done with the highest possible quality; cost is secondary. Which model tier fits?",
+    "options": [
+      "The top-tier (Opus-class) model.",
+      "The smallest model, to save cost.",
+      "Any model; quality is the same.",
+      "No model; do it manually."
+    ],
+    "answer": [0],
+    "explanation": "Hard, high-stakes reasoning and agentic coding is where the most capable model earns its price.",
+    "trap": "Defaulting to the cheapest model when the requirement is quality."
+  },
+  {
+    "id": "models-07", "domain": "models",
+    "stem": "Where should stable role and behavior instructions go, compared with per-request data?",
+    "options": [
+      "Stable role and rules in the system prompt; task-specific input in the user turn.",
+      "Everything in the user turn.",
+      "Everything in an assistant prefill.",
+      "In a tool description."
+    ],
+    "answer": [0],
+    "explanation": "This separation keeps behavior consistent and makes the stable part cacheable.",
+    "trap": "Mixing stable rules with per-request data."
+  },
+  {
+    "id": "models-08", "domain": "models",
+    "stem": "An assistant answering from provided documents sometimes invents citations. What is the best technique?",
+    "options": [
+      "Require answers to cite document IDs (or quote passages) only from the provided documents, allow 'not found', and verify citations in code.",
+      "Increase temperature to 1.",
+      "Remove the documents to reduce confusion.",
+      "Use a larger font in the documents."
+    ],
+    "answer": [0],
+    "explanation": "Grounding instructions plus an explicit 'I don't know' path reduce fabrication; code verification catches what slips through.",
+    "trap": "No escape path forces the model to invent an answer."
+  },
+
+  {
+    "id": "devprod-01", "domain": "devprod",
+    "stem": "A team wants Claude Code to follow the same build commands and coding conventions for everyone working in a repository. What should they use?",
+    "options": [
+      "A project CLAUDE.md committed to the repository.",
+      "Each developer's personal notes.",
+      "Typing the conventions at the start of every session.",
+      "A wiki page outside the repository."
+    ],
+    "answer": [0],
+    "explanation": "Project CLAUDE.md is loaded automatically and versioned with the code, so everyone shares the same context.",
+    "trap": "Context that isn't loaded automatically gets skipped."
+  },
+  {
+    "id": "devprod-02", "domain": "devprod",
+    "stem": "A team wants Claude Code in CI to fix lint errors automatically. What is the safe setup?",
+    "options": [
+      "Allow all tools, unrestricted shell and network, with production secrets available.",
+      "Least privilege: allowlist the specific tools/commands needed, no production secrets, run in an isolated environment, and require PR review of changes.",
+      "Run as an administrator to avoid permission errors.",
+      "Disable logs to keep CI fast."
+    ],
+    "answer": [1],
+    "explanation": "Automation in CI runs without a human watching each step, so permissions must be minimal and outputs reviewed.",
+    "trap": "Broad permissions 'for convenience'."
+  },
+  {
+    "id": "devprod-03", "domain": "devprod",
+    "stem": "Where should shared team permission rules go, compared with one developer's personal overrides?",
+    "options": [
+      "Shared rules in .claude/settings.json (committed); personal overrides in .claude/settings.local.json (not committed).",
+      "Both committed in the same file.",
+      "Environment variables only.",
+      "In CLAUDE.md."
+    ],
+    "answer": [0],
+    "explanation": "Claude Code separates shared project settings from local personal settings for exactly this reason.",
+    "trap": "Mixing personal preferences into the shared file."
+  },
+  {
+    "id": "devprod-04", "domain": "devprod",
+    "stem": "An organization is rolling Claude Code out to 200 engineers. Which TWO actions are best? (Select TWO)",
+    "options": [
+      "Start with a pilot group, provide enablement docs and training, and gather feedback.",
+      "Use organization-managed policy settings for guardrails, such as denying dangerous commands and approving MCP servers.",
+      "Let everyone install any MCP server they find.",
+      "Skip training; the tool is intuitive.",
+      "Share one API key in the team chat."
+    ],
+    "answer": [0, 1],
+    "explanation": "Enablement plus central guardrails gives adoption without uncontrolled risk.",
+    "trap": "Uncontrolled MCP servers and shared credentials."
+  },
+  {
+    "id": "devprod-05", "domain": "devprod",
+    "stem": "A developer wants Claude Code to read the internal ticket system. What is the right approach?",
+    "options": [
+      "Configure a vetted MCP server for the ticket system (for example in the project's .mcp.json) with a scoped token.",
+      "Paste access tokens into the chat.",
+      "Share screenshots of tickets.",
+      "Email ticket exports to Claude."
+    ],
+    "answer": [0],
+    "explanation": "MCP gives a defined, permissioned connection; credentials stay out of the conversation.",
+    "trap": "Tokens in chat."
+  },
+  {
+    "id": "devprod-06", "domain": "devprod",
+    "stem": "A certain destructive command must never run from Claude Code, even if a prompt asks for it. What is the reliable control?",
+    "options": [
+      "A deny rule in the permission settings, or a PreToolUse hook that blocks the command.",
+      "A sentence in the prompt.",
+      "Trusting the model's judgment.",
+      "A note in CLAUDE.md."
+    ],
+    "answer": [0],
+    "explanation": "Settings and hooks are enforced by the tool, deterministically. Text instructions are not.",
+    "trap": "Instruction-based 'controls'."
+  },
+  {
+    "id": "devprod-07", "domain": "devprod",
+    "stem": "The team runs the same multi-step Claude workflow every week to produce release notes. How should they make it repeatable?",
+    "options": [
+      "Capture it as a custom slash command or skill in the repository.",
+      "Retype the prompt each week.",
+      "Memorize the steps.",
+      "Keep screenshots of last week's session."
+    ],
+    "answer": [0],
+    "explanation": "Versioned, reusable commands make workflows consistent and shareable.",
+    "trap": "Relying on memory for repeated workflows."
+  },
+  {
+    "id": "devprod-08", "domain": "devprod",
+    "stem": "How should the success of a Claude Code rollout be measured?",
+    "options": [
+      "Adoption plus outcome metrics (for example PR cycle time, review findings, developer survey) compared with a baseline.",
+      "Number of seats purchased.",
+      "Tokens consumed.",
+      "Anecdotes from enthusiastic users."
+    ],
+    "answer": [0],
+    "explanation": "Outcomes against a baseline show whether the rollout delivers value.",
+    "trap": "Activity metrics."
+  }
+]

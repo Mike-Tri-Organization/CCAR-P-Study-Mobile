@@ -1,0 +1,70 @@
+{
+  "company": "MekongFreight",
+  "tagline": "A fictional third-party logistics company in Ho Chi Minh City — every lab builds a piece of its Claude platform.",
+  "background": "MekongFreight runs warehousing, trucking and customs brokerage for about 600 business customers across Vietnam, with hubs in Ho Chi Minh City, Da Nang and Hai Phong. It has 1,200 staff. Leadership wants Claude to cut support costs, speed up customs paperwork and help dispatchers, and has hired you as the architect. The CEO's brief: 'I want an AI agent that runs customer service and customs, and it must never make mistakes.'",
+  "facts": [
+    "About 8,000 customer messages per day (web chat and Zalo), roughly 70% Vietnamese and 30% English.",
+    "Roughly 60% of messages are 'where is my shipment?'; the rest are delivery changes, billing, claims and complaints.",
+    "About 3,000 customs declarations and commercial invoices per day arrive as PDFs and scans.",
+    "Core systems: a Transport Management System (TMS) with a REST API, SAP for billing, SharePoint for policies and contracts.",
+    "Delivery reschedules cost money; refunds and claim payouts above 10 million VND need a manager today.",
+    "The IT team is eight people, two of whom have used Claude Code."
+  ],
+  "constraints": [
+    "Customer personal data (names, phone numbers, national ID numbers on customs documents) must be protected under Vietnam's personal data protection rules and customer contracts.",
+    "Customs filings are legally binding; errors bring fines and delays.",
+    "Support answers must use the current policy: the refund policy changed in 2026.",
+    "Budget is fixed for the year; leadership wants a pilot result within 8 weeks."
+  ],
+  "decisions": [
+    {
+      "id": "D1", "domain": "integ", "title": "Connecting Claude to the TMS",
+      "situation": "Support, dispatch and the customs team will all need shipment data from the TMS. A developer proposes giving each assistant a TMS admin API key in its system prompt.",
+      "prompt": "What integration architecture do you recommend, and how do you handle credentials, write actions and TMS outages?",
+      "modelAnswer": "Build one MCP server that wraps the TMS API (see Lab L5), reused by all three assistants. Credentials live in the server's environment or a secret manager, never in prompts. Expose read tools (get_shipment_status, list_events) to everyone; put write tools (reschedule_delivery) on a separate, narrowly scoped server or behind an approval step. Validate inputs in the server (shipment ID format, ISO dates). Retry transient 5xx errors with backoff in the tool layer and return a structured is_error result when the TMS is down, so the assistant says the system is unavailable instead of guessing (Lab L4). Use a shared remote server with per-user or per-service auth once more than a few people need it.",
+      "labs": ["L4", "L5"]
+    },
+    {
+      "id": "D2", "domain": "design", "title": "'An AI agent that runs customer service'",
+      "situation": "The CEO asks for an autonomous agent for all 8,000 daily messages.",
+      "prompt": "What design do you propose for customer support, and why not a fully autonomous agent?",
+      "modelAnswer": "A routing workflow, not an autonomous agent. A small, fast model classifies each message (category, urgency, language), then a specialized handler answers: 'where is my shipment' becomes a tool call to the TMS plus a templated answer; policy questions go to a grounded RAG handler; delivery changes go to a tool-using handler with an approval gate; complaints and claims go to humans with an AI-drafted summary (Lab L1). This is cheaper, faster, testable per category, and limits what can go wrong. Reserve agentic behavior for the narrow cases that need multi-step tool use. Enforce the 10 million VND limit in the refund tool, not in the prompt.",
+      "labs": ["L1"]
+    },
+    {
+      "id": "D3", "domain": "eval", "title": "How do we know it works?",
+      "situation": "Leadership wants a go/no-go decision after the 8-week pilot.",
+      "prompt": "What evaluation plan do you put in place before and after launch?",
+      "modelAnswer": "Agree success criteria first: routing accuracy, answer correctness against current policy, correct escalation of claims, handling time and CSAT versus today's baseline. Build an eval set from about 300 real, anonymized messages in both Vietnamese and English, including edge cases (old shipment IDs, angry customers, policy changes). Grade with code where possible (category, JSON validity, required facts) and use a calibrated LLM judge for tone and helpfulness (Lab L7). Report results by category and by language so averages don't hide regressions. After launch, sample production conversations weekly, track quality, latency, cost and escalation rate, and feed failures back into the eval set. For RAG failures, check retrieval (did the right policy chunk come back?) before touching the prompt or model.",
+      "labs": ["L6", "L7"]
+    },
+    {
+      "id": "D4", "domain": "gov", "title": "Personal data and customs documents",
+      "situation": "Customs documents contain names, phone numbers and national ID numbers. Legal asks what controls exist.",
+      "prompt": "Which governance controls do you design for personal data, customs filings and prompt injection?",
+      "modelAnswer": "Data minimization and redaction in the application before data reaches logs or prompts where it isn't needed (Lab L8). Access control at retrieval: staff and customers only see documents they are entitled to. Audit logs of prompts, tool calls, approvals and user identity, with sensitive values redacted. Extracted customs fields are validated in code, and a licensed broker approves every filing before submission, because it is irreversible and legally binding. Treat inbound customer messages and documents as untrusted data: no tool that sends money or files documents can be triggered without approval. Document data flows and retention so personal data in logs, vector stores and caches can be found and deleted. Have an incident runbook: contain, preserve, notify, root-cause, add to evals.",
+      "labs": ["L8", "L4"]
+    },
+    {
+      "id": "D5", "domain": "stake", "title": "'It must never make mistakes'",
+      "situation": "The CEO expects perfection; the head of customs wants a human to check everything; operations wants full automation.",
+      "prompt": "How do you handle expectations and the review conflict, and what does the rollout look like?",
+      "modelAnswer": "Reframe 'never make mistakes' into measurable targets per category with an error-handling design: confidence-based escalation, human review where errors are costly, and a clear path for customers to reach a person. Resolve the review conflict with risk tiers: 100% human approval for customs filings and payouts above the limit, sampled review for status answers, with thresholds revisited using pilot data. Roll out in stages: internal staff first, then 10% of customers on web chat, then Zalo. Version prompts and configs, run regression evals before every change, keep a rollback plan, and hand over a runbook to the IT team (Lab L9).",
+      "labs": ["L9"]
+    },
+    {
+      "id": "D6", "domain": "models", "title": "Which model for which job?",
+      "situation": "Finance asks why you aren't using the most capable model everywhere, or the cheapest everywhere.",
+      "prompt": "Assign models to classification, support answers, customs extraction and the nightly summary report, and justify the choices in business terms.",
+      "modelAnswer": "Classification: the fast, small tier — high volume, simple task, low latency. Support answers: the balanced tier by default, with caching for the stable policy prefix; escalate hard cases. Customs extraction: test both small and balanced tiers on the eval set and pick the cheapest that meets the accuracy bar; use a schema for structured output and batch processing for documents that aren't urgent. Nightly management summary: the batch API at a discount, since nobody needs it in real time. Explain each choice as 'meets the measured quality bar at this cost and latency', with numbers from Lab L2 and Lab L3.",
+      "labs": ["L2", "L3"]
+    },
+    {
+      "id": "D7", "domain": "devprod", "title": "Enabling the eight-person IT team",
+      "situation": "The IT team will maintain the system and wants to use Claude Code for its own work.",
+      "prompt": "How do you set the team up safely and productively?",
+      "modelAnswer": "A committed project CLAUDE.md with build, test and deploy commands and conventions; shared .claude/settings.json with deny rules for destructive commands and production access, with personal tweaks in settings.local.json; the vetted TMS MCP server in .mcp.json with a read-only token; Claude Code in CI limited to lint and test fixes, no production secrets, every change via PR review; custom commands for repeated work such as release notes and eval runs (Lab L10). Pilot with the two experienced engineers, run a short training, and measure PR cycle time and incident rate against the baseline.",
+      "labs": ["L10"]
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+[
+  {
+    "id": "integ",
+    "number": 1,
+    "name": "Integration",
+    "weight": 19,
+    "summary": "How Claude connects to the systems around it: MCP servers, APIs, tools, other agents and retrieval (RAG). Permissions, secrets, and what happens when an integration fails.",
+    "keyIdeas": [
+      "Wrap a shared system once as an MCP server; many assistants reuse it.",
+      "Secrets live in the tool/server layer (env, secret manager), never in model context.",
+      "Least privilege: separate read tools from write/destructive tools; scope credentials per server.",
+      "Tool failures return structured errors (is_error) so the model can retry or report honestly.",
+      "Validate tool inputs server-side; tighten JSON schemas with enums, formats and examples.",
+      "stdio = local process; Streamable HTTP + auth = shared remote server.",
+      "RAG quality is usually a retrieval problem: metadata, versioning, filtering, chunking.",
+      "Subagents return compact structured summaries, not full transcripts."
+    ],
+    "traps": [
+      "Putting credentials in the system prompt or tool descriptions.",
+      "Relying on a tool description sentence ('never call delete unless sure') as a security control.",
+      "Fixing bad RAG answers by stuffing more chunks into context.",
+      "Swallowing tool errors and returning empty 'success'."
+    ]
+  },
+  {
+    "id": "design",
+    "number": 2,
+    "name": "Solution Design & Architecture",
+    "weight": 17,
+    "summary": "Turning a business need into the right Claude design: single call vs fixed workflow vs agent vs multi-agent, plus batch vs real-time and where hard rules are enforced.",
+    "keyIdeas": [
+      "Pick the simplest pattern that meets the requirement: call → workflow → agent → multi-agent.",
+      "Workflows (chaining, routing, parallelization) fit known, repeatable steps.",
+      "Agents fit open-ended tasks where steps can't be known in advance; give budgets and stop criteria.",
+      "Multi-agent pays off for parallelizable, independent subtasks needing separate contexts.",
+      "Batch processing for large, non-urgent volume; real-time for interactive latency.",
+      "Business rules (limits, approvals) are enforced in code, not in prompts.",
+      "A document that fits in context may not need RAG at all — consider long context + caching."
+    ],
+    "traps": [
+      "Choosing an agent when a workflow solves it.",
+      "Multi-agent 'because it's important'.",
+      "Building a vector DB before checking whether the corpus fits in context.",
+      "Enforcing money/safety limits with a system prompt line."
+    ]
+  },
+  {
+    "id": "eval",
+    "number": 3,
+    "name": "Evaluation, Testing & Optimization",
+    "weight": 16,
+    "summary": "Proving the system works before and after launch: success criteria, eval sets, code graders, LLM-as-judge, human review, slicing, regression testing and diagnosing failures.",
+    "keyIdeas": [
+      "Success criteria and a representative eval set come before building.",
+      "Use the cheapest reliable grader: code grader > LLM-as-judge > human, by task.",
+      "Calibrate LLM judges against human labels; use specific rubrics.",
+      "Slice results by category; a better average can hide a critical regression.",
+      "Separate retrieval metrics (recall@k) from generation metrics (faithfulness).",
+      "Production monitoring feeds failures back into the eval set.",
+      "Optimize cost with caching, model routing and batching — then re-run evals."
+    ],
+    "traps": [
+      "Shipping because the average score went up.",
+      "Trusting an uncalibrated LLM judge.",
+      "Swapping models before locating whether retrieval or generation failed.",
+      "Treating evals as a one-time pre-launch activity."
+    ]
+  },
+  {
+    "id": "gov",
+    "number": 4,
+    "name": "Governance, Safety & Risk Management",
+    "weight": 14,
+    "summary": "Where guardrails belong, where humans review, data access and minimization, prompt injection, incident handling and compliance (GDPR, HIPAA, local data protection law).",
+    "keyIdeas": [
+      "Compliance needs real controls in the system; a prompt line is not a control.",
+      "Data minimization: don't put data in context that the bot must never reveal.",
+      "Treat retrieved/inbound content as untrusted data (prompt injection).",
+      "Human-in-the-loop before irreversible or high-impact actions.",
+      "Enforce access control at retrieval time (document-level ACLs).",
+      "Audit logs: prompts, tool calls, approvals, identity — with redaction of sensitive data.",
+      "Incident response: contain, preserve evidence, notify, root-cause, add to evals.",
+      "Know where personal data lives (logs, vector stores, caches) so it can be deleted."
+    ],
+    "traps": [
+      "'Tell the model not to log PHI.'",
+      "Asking the model to check user permissions.",
+      "Human review on everything (or nothing) instead of risk-tiered review.",
+      "Deleting logs after an incident."
+    ]
+  },
+  {
+    "id": "stake",
+    "number": 5,
+    "name": "Stakeholder Communication & Lifecycle Management",
+    "weight": 14,
+    "summary": "The consulting side: discovery, expectations, explaining trade-offs in business terms, success metrics, change control, rollout, model upgrades and handoff.",
+    "keyIdeas": [
+      "Discovery first: problem, users, current process, metrics, constraints, volume.",
+      "Reset '100% accurate' expectations into measurable targets plus error handling.",
+      "Explain model choice in business terms: quality bar met, cost, latency, scale.",
+      "Risk-tiered proposals resolve compliance-vs-automation conflicts.",
+      "Version prompts/configs; regression evals before every change.",
+      "Staged rollout, monitoring and a rollback plan.",
+      "Model upgrades go through the eval suite and a canary.",
+      "Handoff = runbook, evals, dashboards, incident path, ownership."
+    ],
+    "traps": [
+      "Building before success criteria are agreed.",
+      "Promising perfection.",
+      "Editing production prompts live.",
+      "Switching to a new model the day it launches."
+    ]
+  },
+  {
+    "id": "models",
+    "number": 6,
+    "name": "Claude Models, Prompting & Context Engineering",
+    "weight": 13,
+    "summary": "Choosing the right model for capability, cost and speed; prompting techniques; structured output; prompt caching; and managing what goes into the context window.",
+    "keyIdeas": [
+      "Small/fast model for high volume and tight latency; top model for hard reasoning and agentic coding.",
+      "Route: cheap model by default, escalate hard cases.",
+      "Long documents at the top, the question/instructions at the end.",
+      "XML tags, few-shot examples and tool schemas for consistent structure.",
+      "Let the model reason (extended thinking / step-by-step) for multi-step problems.",
+      "Prompt caching needs an identical prefix within the TTL.",
+      "System prompt = stable role/rules; user turn = per-request data.",
+      "Long sessions: compact history, trim stale tool output, store artifacts externally."
+    ],
+    "traps": [
+      "Using the biggest model for everything.",
+      "Putting variable content before the cache breakpoint.",
+      "Fixing format problems by raising temperature.",
+      "Letting context fill with old tool output."
+    ]
+  },
+  {
+    "id": "devprod",
+    "number": 7,
+    "name": "Developer Productivity & Operational Enablement",
+    "weight": 7,
+    "summary": "How teams work with Claude day to day: Claude Code project settings, CLAUDE.md, permissions, MCP config, CI usage, reusable commands and rollout.",
+    "keyIdeas": [
+      "Project CLAUDE.md is committed and shared; it holds conventions and commands.",
+      ".claude/settings.json is shared; .claude/settings.local.json is personal and not committed.",
+      "Deny rules and hooks block dangerous commands deterministically.",
+      "CI: least privilege, allowlisted tools, no production secrets, PR review.",
+      "Vetted MCP servers in project .mcp.json with scoped tokens.",
+      "Repeated workflows become custom commands/skills.",
+      "Pilot + training + managed policy settings for org rollout; measure outcomes."
+    ],
+    "traps": [
+      "Sharing one API key in chat.",
+      "Letting everyone install arbitrary MCP servers.",
+      "Relying on a CLAUDE.md note to prevent destructive commands.",
+      "Measuring rollout by seat count."
+    ]
+  }
+]

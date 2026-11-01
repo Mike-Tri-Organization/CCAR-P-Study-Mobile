@@ -1,0 +1,155 @@
+[
+  {
+    "id": "L1", "domain": "design", "title": "Routing workflow vs one big prompt",
+    "goal": "See why a classify-then-route workflow beats a single giant prompt or an autonomous agent for known categories.",
+    "concept": "Step 1: the fast model classifies the message into a category, urgency and language as JSON. Step 2: the message is routed to a short, specialized playbook prompt on the balanced model. Each step is small, testable and can use a different model.",
+    "file": "lab01_routing_workflow.py",
+    "runMode": "workflow",
+    "system": "",
+    "prompt": "Chào MekongFreight, lô hàng MF-1003 của tôi bị giữ ở hải quan Cát Lái 3 ngày rồi. Tôi cần biết khi nào được thông quan, khách của tôi đang rất gấp!",
+    "takeaways": [
+      "Known categories → workflow, not agent.",
+      "Classification runs on the cheapest model; only the answer step uses a bigger one.",
+      "Each playbook can be evaluated and changed independently."
+    ]
+  },
+  {
+    "id": "L2", "domain": "models", "title": "Model tiers: quality, latency, cost",
+    "goal": "Measure the same task on the fast, balanced and top tiers so model choice is backed by numbers.",
+    "concept": "The same prompt goes to all three tiers. Compare the answers, latency, token usage and estimated cost (prices are editable in Settings). The exam rewards 'the cheapest model that meets the quality bar', with escalation for hard cases.",
+    "file": "lab02_model_compare.py",
+    "runMode": "compare_models",
+    "system": "You are a logistics pricing analyst. Be concise and show your calculation.",
+    "prompt": "A pallet costs 1,850,000 VND per trip from Ho Chi Minh City to Da Nang. Fuel is 38% of that cost. If fuel prices rise 12% and we add a 4% handling surcharge on the new total, what is the new price per pallet? Give the final number rounded to the nearest 1,000 VND.",
+    "takeaways": [
+      "Record latency and cost — that is your business argument.",
+      "If the fast tier gets it right, it is the default; route hard cases up.",
+      "Correct answer: 1,850,000 × (1 + 0.38×0.12) = 1,934,360 → ×1.04 = 2,011,734 → 2,012,000 VND."
+    ]
+  },
+  {
+    "id": "L3", "domain": "models", "title": "Prompt caching on a stable prefix",
+    "goal": "Watch cache_creation_input_tokens on the first call and cache_read_input_tokens on the second.",
+    "concept": "A long policy handbook (about 5,000 tokens) is sent as a system block with cache_control. The first call writes it to the cache; a second call within the cache lifetime with a different question reads it. Any change before the breakpoint is a cache miss.",
+    "file": "lab03_prompt_caching.py",
+    "runMode": "caching",
+    "system": "You are MekongFreight's claims assistant. Answer only from the carrier liability handbook below and cite clause numbers.",
+    "prompt": "What is the liability limit and the filing deadline in clause 12?",
+    "takeaways": [
+      "Stable content first, variable content last.",
+      "Cache hits need an identical prefix within the cache lifetime.",
+      "Very short prefixes are below the minimum cacheable length and won't cache."
+    ]
+  },
+  {
+    "id": "L4", "domain": "integ", "title": "Tool use with a human approval gate",
+    "goal": "Run a real tool-use loop: read tools run freely, the write tool asks you (the human) first, and errors come back as is_error.",
+    "concept": "Claude gets two tools: get_shipment_status (read) and reschedule_delivery (write). The app executes the tools locally against fake TMS data. Before any reschedule, a dialog asks you to approve. If you deny, the tool returns is_error and Claude must tell the customer honestly. Try shipment MF-9999 to see a not-found error.",
+    "file": "lab04_tools_hitl.py",
+    "runMode": "tool_use",
+    "system": "You are MekongFreight's customer support assistant. Use the tools to look up shipments. Only reschedule a delivery if the customer asks and gives a date. Never invent shipment data; if a tool returns an error, explain it plainly to the customer. Today is 2026-11-10.",
+    "prompt": "Hi, where is shipment MF-1001? If it can't arrive by tomorrow, please move delivery to 2026-11-14 because our warehouse is closed until then.",
+    "takeaways": [
+      "The approval is enforced in code (the tool layer), not in the prompt.",
+      "is_error results stop the model from filling gaps with guesses.",
+      "Inputs (shipment ID, ISO date) are validated in the tool before anything happens."
+    ]
+  },
+  {
+    "id": "L5", "domain": "integ", "title": "Build the MekongFreight MCP server",
+    "goal": "Wrap the (fake) TMS once as an MCP server that Claude Code and other clients can share.",
+    "concept": "Uses the official Python MCP SDK (FastMCP). Read and write tools are separated; the write tool validates inputs and is off unless an environment flag enables it. Secrets come from environment variables. Run it locally over stdio with Claude Code, then think about what changes for a shared remote server.",
+    "file": "lab05_mcp_server.py",
+    "runMode": "none",
+    "system": "",
+    "prompt": "",
+    "takeaways": [
+      "One server, many assistants.",
+      "Secrets in the server environment, never in prompts or schemas.",
+      "stdio for local; Streamable HTTP with auth for shared use."
+    ]
+  },
+  {
+    "id": "L6", "domain": "integ", "title": "RAG with citations and a retrieval trap",
+    "goal": "See a retrieval failure: the outdated 2023 refund policy can win retrieval. Then check citations in code.",
+    "concept": "A tiny keyword retriever picks the top 2 of 5 documents. Claude must answer only from them and cite document IDs, or say the answer is not there. The app then verifies citations in code. Try 'refund within how many days' vs 'current 2026 refund policy days' and compare what gets retrieved.",
+    "file": "lab06_rag_citations.py",
+    "runMode": "rag",
+    "system": "You answer questions for MekongFreight customers using only the provided documents.",
+    "prompt": "How many days do I have to request a refund for a damaged shipment?",
+    "takeaways": [
+      "Wrong answer + right doc in the index = retrieval problem, not a model problem.",
+      "Fix with metadata (version, effective date) and index hygiene, not more chunks.",
+      "Give the model an explicit 'not found' path; verify citations in code."
+    ],
+    "docs": [
+      { "id": "D1", "title": "Refund policy (2023, SUPERSEDED)", "text": "Refund policy effective 2023-01-01. Customers may request a refund for a damaged shipment within 7 days of delivery. Refund requests require photos and the delivery note. This policy is superseded." },
+      { "id": "D2", "title": "Refund policy (2026, CURRENT)", "text": "Refund policy effective 2026-03-01, replaces the 2023 policy. Customers may request a refund or claim for a damaged or lost shipment within 14 days of the delivery date. Attach photos, the signed delivery note and the commercial invoice. Claims above 10 million VND are reviewed by a manager." },
+      { "id": "D3", "title": "Delivery rescheduling", "text": "Deliveries can be rescheduled up to 24 hours before the planned delivery window at no charge. Later changes cost 150,000 VND per shipment. Reschedules are made through support or the customer portal." },
+      { "id": "D4", "title": "Customs holds", "text": "Shipments held by customs at Cat Lai or Hai Phong are usually released within 2 to 5 working days after all documents are complete. MekongFreight brokers notify the customer when additional documents are needed." },
+      { "id": "D5", "title": "Business hours", "text": "Support is available 7:00 to 21:00 every day in Vietnamese and English. Hubs operate in Ho Chi Minh City, Da Nang and Hai Phong." }
+    ]
+  },
+  {
+    "id": "L7", "domain": "eval", "title": "Code grader + LLM-as-judge",
+    "goal": "Grade a small golden set two ways and look for disagreements between the graders.",
+    "concept": "For each case, the fast model answers. A code grader checks that required facts are present. The balanced model then acts as a judge with a rubric and returns a 1–5 score as JSON. Cheap deterministic checks first; the judge covers what code can't (tone, helpfulness). A real judge must be calibrated against human labels.",
+    "file": "lab07_evals_judge.py",
+    "runMode": "eval_judge",
+    "system": "You are MekongFreight support. Policy facts: refunds or claims within 14 days of delivery; reschedules free up to 24 hours before the delivery window, otherwise 150,000 VND; support hours 7:00–21:00 daily. Answer in 2–3 friendly sentences in the customer's language.",
+    "prompt": "(This lab uses its built-in golden set; the text box is ignored.)",
+    "takeaways": [
+      "Use code graders for anything deterministic.",
+      "Report by case/category, not just the average.",
+      "When the judge and the code grader disagree, read the output yourself."
+    ],
+    "cases": [
+      { "input": "How long do I have to file a claim for a damaged parcel?", "mustInclude": ["14"] },
+      { "input": "Tôi muốn đổi lịch giao hàng vào ngày mai, có mất phí không?", "mustInclude": ["24", "150"] },
+      { "input": "What time does your support team open?", "mustInclude": ["7"] },
+      { "input": "I want to change delivery, the truck arrives in 3 hours. Is that free?", "mustInclude": ["150"] }
+    ]
+  },
+  {
+    "id": "L8", "domain": "gov", "title": "Redaction before the model + audit log",
+    "goal": "Personal data is removed in code before anything leaves your machine, and every call leaves an audit record.",
+    "concept": "Emails, Vietnamese phone numbers and 12-digit national ID numbers are replaced with placeholders by regex. Only the redacted text goes to Claude. An audit line records a hash of the original (not the original itself), the redaction counts and the model. This is a control in code — not 'please don't repeat personal data' in a prompt.",
+    "file": "lab08_redaction_audit.py",
+    "runMode": "redaction",
+    "system": "Summarize the customer ticket in one sentence and assign a category: delivery_change, tracking, billing, claim, complaint, other. Keep placeholders like [EMAIL_1] as they are.",
+    "prompt": "Khách hàng Nguyễn Văn An (CCCD 079203001234, sđt 0903 123 456, email an.nguyen@example.vn) báo lô hàng MF-1002 bị móp méo khi nhận, yêu cầu bồi thường. Gọi lại số +84 912 345 678 sau 17h.",
+    "takeaways": [
+      "Minimize before sending; the model can't leak what it never received.",
+      "Audit logs prove what happened without storing the sensitive data itself.",
+      "Regex is a starting point — production needs tested, locale-aware detection."
+    ]
+  },
+  {
+    "id": "L9", "domain": "stake", "title": "Discovery worksheet and success criteria",
+    "goal": "Practice the consulting side: turn a vague request into problem, metrics, constraints and a phased plan.",
+    "concept": "No API call. Fill in the worksheet for MekongFreight using the case study. The exam's stakeholder questions reward: discovery before design, measurable targets instead of promises, risk-tiered review, staged rollout and a clear handoff.",
+    "file": "lab09_discovery_worksheet.md",
+    "runMode": "none",
+    "system": "",
+    "prompt": "",
+    "takeaways": [
+      "Success criteria are agreed before building.",
+      "Explain trade-offs in business terms with numbers.",
+      "Handoff includes evals and a runbook, not just code."
+    ]
+  },
+  {
+    "id": "L10", "domain": "devprod", "title": "Team setup for Claude Code",
+    "goal": "A ready-to-copy setup: CLAUDE.md, shared and local settings with deny rules, .mcp.json and a CI job.",
+    "concept": "No API call. Copy these files into a scratch repo and try them with Claude Code. Notice which controls are enforced by the tool (permissions, hooks) and which are just guidance (CLAUDE.md).",
+    "file": "lab10_team_setup.md",
+    "runMode": "none",
+    "system": "",
+    "prompt": "",
+    "takeaways": [
+      "CLAUDE.md = shared context; settings.json = enforced rules.",
+      "settings.local.json for personal overrides, not committed.",
+      "CI: least privilege, no production secrets, PR review."
+    ]
+  }
+]
