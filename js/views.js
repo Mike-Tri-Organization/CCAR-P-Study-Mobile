@@ -101,7 +101,7 @@ function taskRow(t) {
   const row = h('div', { class: 'task' + (done ? ' done' : '') },
     box,
     h('label', { for: 'task-' + t.id },
-      h('span', { class: 'small' }, t.date.slice(5) + ' · ' + T(t.kind) + ' '), t.domain && dot(t.domain), t.text),
+      h('span', { class: 'small task-meta' }, t.date.slice(5) + ' · ' + T(t.kind), t.domain && [' ', dot(t.domain)]), t.text),
     href && h('a', { class: 'link', href }, 'Open'));
   return row;
 }
