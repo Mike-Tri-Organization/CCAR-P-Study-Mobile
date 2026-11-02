@@ -44,9 +44,24 @@ Content updates: edit `data/questions.json` etc. (same format as the desktop app
 | `js/app.js` | Router, bottom navigation, theme, language |
 | `js/i18n.js`, `js/lang/` | UI translations (`t()`), language detection |
 | `js/store.js` | Data loading, progress, statistics |
+| `js/merge.js` | Pure rules for merging two progress copies (used for cross-device sync) |
 | `js/quiz.js` | Practice and mock exam |
 | `js/views.js` | Dashboard, plan, domains, labs, case, settings |
 | `js/labs.js`, `js/claude.js` | Lab runner and Claude API client (ports of `LabRunner.cs`, `ClaudeClient.cs`) |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Offline + installability |
 | `data/` | Questions, plan, domains, labs, case study, Python lab files |
 | `data/vi/` | Vietnamese translations of the content, keyed by id |
+
+## Syncing progress between devices (work in progress)
+
+Progress lives in this browser (`localStorage`) and in the Windows app (`progress.json`); both use the same JSON shape. `js/merge.js` defines how two copies are merged, and the Windows app implements the same rules in `ProgressMerge.cs`:
+
+| Data | Rule |
+|---|---|
+| Questions | Per question, the record with more attempts wins; tie → later `lastSeen`, then more correct |
+| Plan ticks, labs run | Union (a tick removed on one device can come back after a merge) |
+| Mock results | Union, de-duplicated |
+| Case notes | The note with the later `caseNotesAt` wins; an emptied note deletes it |
+| Settings, API key | Never merged; stay on each device |
+
+Run the tests with `node --test tests/merge.test.mjs`. `tests/merge-cases.json` is shared with the Windows repo (keep both copies identical). Signing in with Google and storing the file in Drive is the next step and is not implemented yet.
