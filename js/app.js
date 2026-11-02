@@ -67,6 +67,8 @@ function route() {
   const [key = '', arg] = location.hash.replace(/^#\/?/, '').split('/');
   const fn = ROUTES[key] || ROUTES[''];
   renderNav(ROUTES[key] ? key : '');
+  // Layout hook for CSS: lets desktop styles pick a layout per screen (list vs detail views differ).
+  root.dataset.view = (ROUTES[key] ? key || 'home' : 'home') + (arg ? '-detail' : '');
   try { fn(arg); } catch (e) { root.replaceChildren(h('div', { class: 'card' }, h('b', null, 'Something went wrong'), h('p', { class: 'small' }, e.message))); console.error(e); }
   window.scrollTo(0, 0);
 }

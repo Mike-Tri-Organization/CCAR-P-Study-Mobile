@@ -167,6 +167,42 @@ textarea.input { resize: vertical; }
 .toast { position: fixed; left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); background: var(--ink); color: var(--bg); padding: 12px 16px; border-radius: 12px; z-index: 20; text-align: center; }
 
 @media (min-width: 760px) { main { padding-top: 32px; } }
+
+/* ---- Desktop (>= 900px): sidebar navigation + wider content. Phone/tablet layout is unchanged. ---- */
+@media (min-width: 900px) {
+  :root { --side: 232px; }
+  body { padding-left: var(--side); padding-bottom: 0; }
+  main { max-width: 1040px; padding: 32px 32px 48px; }
+
+  #nav {
+    top: 0; right: auto; width: var(--side); flex-direction: column; gap: 4px;
+    border-top: 0; border-right: 1px solid var(--line); padding: 0 12px 16px; overflow-y: auto;
+  }
+  #nav::before { content: "CCAR-P Study"; display: block; padding: 24px 12px 20px; font-size: 18px; font-weight: 700; color: var(--ink); }
+  .navitem { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 48px; padding: 0 12px; border-radius: 10px; font-size: 15px; }
+  .navitem.on { background: var(--accent-soft); }
+  .navitem svg { flex: none; }
+  .toast { left: calc(var(--side) + 16px); bottom: 24px; }
+
+  /* Focused screens stay a readable single column. */
+  main[data-view^="practice"], main[data-view^="mock"], main[data-view="case"], main[data-view="plan"],
+  main[data-view="settings"], main[data-view="labs-detail"] { max-width: 760px; }
+
+  /* Card grids. Headings and notices span the full width. */
+  main[data-view="home"], main[data-view="domains"], main[data-view="labs"], main[data-view="more"] {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start;
+  }
+  main[data-view="home"] > .card, main[data-view="domains"] > .card, main[data-view="labs"] > .card, main[data-view="more"] > .card { margin: 0; }
+  main[data-view="home"] > h1, main[data-view="home"] > .lede, main[data-view="home"] > .card.accent,
+  main[data-view="domains"] > h1, main[data-view="domains"] > .lede,
+  main[data-view="labs"] > h1, main[data-view="labs"] > .lede, main[data-view="labs"] > .card:not(.tap),
+  main[data-view="more"] > h1 { grid-column: 1 / -1; margin-top: 0; }
+  main[data-view="home"] > .lede, main[data-view="domains"] > .lede, main[data-view="labs"] > .lede { margin: -12px 0 0; }
+}
+@media (min-width: 900px) and (hover: hover) {
+  .navitem:hover { background: var(--surface2); }
+  .card.tap:hover, .chip:hover, .opt:hover:not(:disabled) { background: var(--surface2); }
+}
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
 
 .check-row { display: flex; gap: 12px; align-items: flex-start; margin-top: 14px; }
