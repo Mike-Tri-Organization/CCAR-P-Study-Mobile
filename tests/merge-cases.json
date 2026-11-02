@@ -1,0 +1,507 @@
+{
+ "_comment": "Shared by CCAR-P-Study-Mobile (tests/merge.test.mjs) and CCAR-P-Study (dotnet run -- --selftest). Keep both copies identical. 'expected' lists only synced fields; merge(local,remote) and merge(remote,local) must both equal it.",
+ "cases": [
+  {
+   "name": "both empty",
+   "local": {},
+   "remote": {},
+   "expected": {
+    "questions": {},
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "questions only on one side are kept",
+   "local": {
+    "questions": {
+     "q1": {
+      "attempts": 2,
+      "correct": 1,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    }
+   },
+   "remote": {
+    "questions": {
+     "q2": {
+      "attempts": 1,
+      "correct": 0,
+      "lastCorrect": false,
+      "lastSeen": "2026-11-02 09:00"
+     }
+    }
+   },
+   "expected": {
+    "questions": {
+     "q1": {
+      "attempts": 2,
+      "correct": 1,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-01 10:00"
+     },
+     "q2": {
+      "attempts": 1,
+      "correct": 0,
+      "lastCorrect": false,
+      "lastSeen": "2026-11-02 09:00"
+     }
+    },
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "more attempts wins even if older (fresh device must not erase history)",
+   "local": {
+    "questions": {
+     "q1": {
+      "attempts": 20,
+      "correct": 15,
+      "lastCorrect": true,
+      "lastSeen": "2026-10-20 08:00"
+     }
+    }
+   },
+   "remote": {
+    "questions": {
+     "q1": {
+      "attempts": 1,
+      "correct": 1,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-02 09:00"
+     }
+    }
+   },
+   "expected": {
+    "questions": {
+     "q1": {
+      "attempts": 20,
+      "correct": 15,
+      "lastCorrect": true,
+      "lastSeen": "2026-10-20 08:00"
+     }
+    },
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "equal attempts: later lastSeen wins",
+   "local": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 1,
+      "lastCorrect": false,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    }
+   },
+   "remote": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 2,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-02 09:00"
+     }
+    }
+   },
+   "expected": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 2,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-02 09:00"
+     }
+    },
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "equal attempts and lastSeen: more correct wins",
+   "local": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 1,
+      "lastCorrect": false,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    }
+   },
+   "remote": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 2,
+      "lastCorrect": false,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    }
+   },
+   "expected": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 2,
+      "lastCorrect": false,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    },
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "fully tied: lastCorrect true wins",
+   "local": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 2,
+      "lastCorrect": false,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    }
+   },
+   "remote": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 2,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    }
+   },
+   "expected": {
+    "questions": {
+     "q1": {
+      "attempts": 3,
+      "correct": 2,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    },
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "plan and labs are unions, sorted and de-duplicated",
+   "local": {
+    "planDone": [
+     "w1-b",
+     "w1-a"
+    ],
+    "labsRun": [
+     "L2"
+    ]
+   },
+   "remote": {
+    "planDone": [
+     "w1-a",
+     "w2-a"
+    ],
+    "labsRun": [
+     "L1",
+     "L2"
+    ]
+   },
+   "expected": {
+    "questions": {},
+    "planDone": [
+     "w1-a",
+     "w1-b",
+     "w2-a"
+    ],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [
+     "L1",
+     "L2"
+    ],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "mocks are unioned and de-duplicated",
+   "local": {
+    "mocks": [
+     {
+      "date": "2026-11-03",
+      "total": 20,
+      "correct": 12,
+      "minutesUsed": 39,
+      "byDomain": {
+       "integ": [
+        12,
+        20
+       ]
+      }
+     }
+    ]
+   },
+   "remote": {
+    "mocks": [
+     {
+      "date": "2026-11-03",
+      "total": 20,
+      "correct": 12,
+      "minutesUsed": 39,
+      "byDomain": {
+       "integ": [
+        12,
+        20
+       ]
+      }
+     },
+     {
+      "date": "2026-11-01",
+      "total": 20,
+      "correct": 10,
+      "minutesUsed": 40,
+      "byDomain": {
+       "integ": [
+        10,
+        20
+       ]
+      }
+     }
+    ]
+   },
+   "expected": {
+    "questions": {},
+    "planDone": [],
+    "mocks": [
+     {
+      "date": "2026-11-01",
+      "total": 20,
+      "correct": 10,
+      "minutesUsed": 40,
+      "byDomain": {
+       "integ": [
+        10,
+        20
+       ]
+      }
+     },
+     {
+      "date": "2026-11-03",
+      "total": 20,
+      "correct": 12,
+      "minutesUsed": 39,
+      "byDomain": {
+       "integ": [
+        12,
+        20
+       ]
+      }
+     }
+    ],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "case note: later caseNotesAt wins",
+   "local": {
+    "caseNotes": {
+     "d1": "old"
+    },
+    "caseNotesAt": {
+     "d1": "2026-11-01T10:00:00.000Z"
+    }
+   },
+   "remote": {
+    "caseNotes": {
+     "d1": "new"
+    },
+    "caseNotesAt": {
+     "d1": "2026-11-02T10:00:00.000Z"
+    }
+   },
+   "expected": {
+    "questions": {},
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {
+     "d1": "new"
+    },
+    "caseNotesAt": {
+     "d1": "2026-11-02T10:00:00.000Z"
+    },
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "case note: a later deletion propagates",
+   "local": {
+    "caseNotes": {
+     "d1": "text"
+    },
+    "caseNotesAt": {
+     "d1": "2026-11-01T10:00:00.000Z"
+    }
+   },
+   "remote": {
+    "caseNotes": {
+     "d1": ""
+    },
+    "caseNotesAt": {
+     "d1": "2026-11-02T10:00:00.000Z"
+    }
+   },
+   "expected": {
+    "questions": {},
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {
+     "d1": ""
+    },
+    "caseNotesAt": {
+     "d1": "2026-11-02T10:00:00.000Z"
+    },
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "case note: no timestamps (legacy) -> longer text wins",
+   "local": {
+    "caseNotes": {
+     "d1": "short"
+    }
+   },
+   "remote": {
+    "caseNotes": {
+     "d1": "a much longer answer"
+    }
+   },
+   "expected": {
+    "questions": {},
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {
+     "d1": "a much longer answer"
+    },
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "case note only on one side is kept",
+   "local": {
+    "caseNotes": {
+     "d2": "mine"
+    },
+    "caseNotesAt": {
+     "d2": "2026-11-01T10:00:00.000Z"
+    }
+   },
+   "remote": {},
+   "expected": {
+    "questions": {},
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {
+     "d2": "mine"
+    },
+    "caseNotesAt": {
+     "d2": "2026-11-01T10:00:00.000Z"
+    },
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  },
+  {
+   "name": "updatedAt is the later of the two",
+   "local": {
+    "updatedAt": "2026-11-01T10:00:00.000Z"
+   },
+   "remote": {
+    "updatedAt": "2026-11-03T10:00:00.000Z"
+   },
+   "expected": {
+    "questions": {},
+    "planDone": [],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": "2026-11-03T10:00:00.000Z"
+   }
+  },
+  {
+   "name": "legacy remote file with missing fields",
+   "local": {
+    "questions": {
+     "q1": {
+      "attempts": 1,
+      "correct": 1,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    },
+    "planDone": [
+     "w1-a"
+    ]
+   },
+   "remote": {
+    "questions": {}
+   },
+   "expected": {
+    "questions": {
+     "q1": {
+      "attempts": 1,
+      "correct": 1,
+      "lastCorrect": true,
+      "lastSeen": "2026-11-01 10:00"
+     }
+    },
+    "planDone": [
+     "w1-a"
+    ],
+    "mocks": [],
+    "caseNotes": {},
+    "caseNotesAt": {},
+    "labsRun": [],
+    "updatedAt": ""
+   }
+  }
+ ]
+}

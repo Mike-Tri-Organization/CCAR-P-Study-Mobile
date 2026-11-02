@@ -1,7 +1,7 @@
 // Dashboard, study plan, domains, labs, case study and settings.
 import {
   store, save, settings, DEFAULT_SETTINGS, domainById, domainStats, domainAccuracy, readiness,
-  getApiKey, setApiKey, exportProgress, importProgress, resetProgress,
+  getApiKey, setApiKey, exportProgress, importProgress, resetProgress, setCaseNote,
 } from './store.js';
 import { h, mount, pct, ring, bars, bullets, chips, toast, download } from './ui.js';
 import * as C from './claude.js';
@@ -158,7 +158,7 @@ export function caseStudy(root) {
       const slot = h('div');
       const ta = h('textarea', {
         class: 'input', rows: 5, placeholder: 'Your answer…',
-        onInput: (e) => { notes[dec.id] = e.target.value; save(); },
+        onInput: (e) => setCaseNote(dec.id, e.target.value),
       });
       ta.value = notes[dec.id] || '';
       return h('div', { class: 'card' },

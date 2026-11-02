@@ -91,13 +91,27 @@ function normalize(p) {
   p.planDone ||= [];
   p.mocks ||= [];
   p.caseNotes ||= {};
+  p.caseNotesAt ||= {};   // ISO time of the last edit of each note, used when merging devices
+  p.updatedAt ||= '';
   p.labsRun ||= [];
   p.settings = { ...DEFAULT_SETTINGS, ...(p.settings || {}) };
   return p;
 }
 
 export const settings = () => store.progress.settings;
-export const save = () => set(KEY, JSON.stringify(store.progress));
+export const save = () => {
+  store.progress.updatedAt = new Date().toISOString();
+  return set(KEY, JSON.stringify(store.progress));
+};
+
+/** Save a case-study note and remember when it was edited (so a newer edit on another device can win). */
+export function setCaseNote(id, text) {
+  const p = store.progress;
+  if ((p.caseNotes[id] || '') === text) return;
+  p.caseNotes[id] = text;
+  p.caseNotesAt[id] = new Date().toISOString();
+  save();
+}
 
 export function getApiKey() { return get(API_KEY) || ''; }
 export function setApiKey(k) {
