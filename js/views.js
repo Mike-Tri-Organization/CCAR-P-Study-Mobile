@@ -8,6 +8,7 @@ import * as C from './claude.js';
 import { LANGS, locale, t as T } from './i18n.js';
 import { runLab } from './labs.js';
 
+export const FONT_SIZES = [['small', 'Small'], ['normal', 'Normal'], ['large', 'Large'], ['xlarge', 'Extra large']];
 export const THEMES = [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark'], ['sepia-light', 'Sepia'], ['sepia-dark', 'Sepia dark']];
 
 const today = () => new Date().toLocaleDateString('en-CA');
@@ -252,7 +253,7 @@ export function labs(root, arg) {
 // ======================================================================== settings
 
 export function settingsView(root, hooks) {
-  const { applyTheme, applyLang } = hooks;
+  const { applyTheme, applyLang, applyFontSize } = hooks;
   const S = settings();
   const keyIn = h('input', { class: 'input', type: 'password', autocomplete: 'off', placeholder: 'sk-ant-…', 'aria-label': 'Claude API key' });
   keyIn.value = getApiKey();
@@ -290,6 +291,8 @@ export function settingsView(root, hooks) {
         h('span', null, 'Show practice and mock questions in English (the exam language)'))),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Theme'),
       chips(THEMES, S.theme, (v) => { S.theme = v; save(); applyTheme(); })),
+    h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Text size'),
+      chips(FONT_SIZES, S.fontSize, (v) => { S.fontSize = v; save(); applyFontSize(); })),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Claude API key'),
       h('p', { class: 'small' }, 'Stored only in this browser on this device and sent only to api.anthropic.com. Use a key with a low spend limit; anyone with access to this phone profile can read it.'),
       keyIn,
@@ -303,7 +306,7 @@ export function settingsView(root, hooks) {
       h('p', { class: 'small' }, 'Prices are placeholders — check current pricing.'),
       h('button', {
         class: 'btn ghost', type: 'button',
-        onClick: () => { Object.assign(S, { ...DEFAULT_SETTINGS, theme: S.theme }); save(); applyTheme(); applyLang(); settingsView(root, hooks); },
+        onClick: () => { Object.assign(S, { ...DEFAULT_SETTINGS, theme: S.theme }); save(); applyTheme(); applyFontSize(); applyLang(); settingsView(root, hooks); },
       }, 'Restore defaults')),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Your data'),
       h('p', { class: 'small' }, 'Progress lives on this device. Export a backup file, or import one made on this phone or from another browser.'),
@@ -312,7 +315,7 @@ export function settingsView(root, hooks) {
         h('button', { class: 'btn ghost', type: 'button', onClick: () => fileIn.click() }, 'Import'),
         h('button', {
           class: 'btn danger', type: 'button',
-          onClick: () => { if (confirm(T('Erase all progress on this device?'))) { resetProgress(); toast('Progress reset'); applyTheme(); applyLang(); settingsView(root, hooks); } },
+          onClick: () => { if (confirm(T('Erase all progress on this device?'))) { resetProgress(); toast('Progress reset'); applyTheme(); applyFontSize(); applyLang(); settingsView(root, hooks); } },
         }, 'Reset progress')),
       fileIn),
     h('p', { class: 'small center' }, T('{q} questions · {l} labs · v{v}', { q: store.questions.length, l: store.labs.length, v: '1.1.0' })));

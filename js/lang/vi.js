@@ -155,6 +155,8 @@ export const vi = {
   'Auto': 'Tự động',
   'Show practice and mock questions in English (the exam language)': 'Hiển thị câu hỏi luyện tập và thi thử bằng tiếng Anh (ngôn ngữ của kỳ thi)',
   'Theme': 'Giao diện',
+  'Text size': 'Cỡ chữ',
+  'Small': 'Nhỏ', 'Normal': 'Vừa', 'Large': 'Lớn', 'Extra large': 'Rất lớn',
   'Light': 'Sáng', 'Dark': 'Tối', 'Sepia': 'Sepia', 'Sepia dark': 'Sepia tối',
   'Claude API key': 'Claude API key',
   'Stored only in this browser on this device and sent only to api.anthropic.com. Use a key with a low spend limit; anyone with access to this phone profile can read it.': 'Chỉ lưu trong trình duyệt này trên thiết bị này và chỉ gửi tới api.anthropic.com. Hãy dùng key có hạn mức chi tiêu thấp; ai dùng được hồ sơ trên điện thoại này đều đọc được key.',

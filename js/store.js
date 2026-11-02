@@ -6,6 +6,7 @@ const API_KEY = 'ccarp.apikey';
 
 export const DEFAULT_SETTINGS = {
   theme: 'auto',
+  fontSize: 'normal',
   lang: 'auto',
   questionsEnglish: false,
   modelFast: 'claude-haiku-5-5',

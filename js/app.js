@@ -22,7 +22,7 @@ const ROUTES = {
   plan: () => V.plan(root),
   domains: () => V.domains(root),
   case: () => V.caseStudy(root),
-  settings: () => V.settingsView(root, { applyTheme, applyLang }),
+  settings: () => V.settingsView(root, { applyTheme, applyLang, applyFontSize }),
   more: () => more(),
 };
 
@@ -51,6 +51,12 @@ export function applyTheme() {
   const dark = t === 'auto' ? matchMedia('(prefers-color-scheme: dark)').matches : t.includes('dark');
   const bg = getComputedStyle(r).getPropertyValue('--bg').trim();
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', bg || (dark ? '#131313' : '#F3F2EF'));
+}
+
+export function applyFontSize() {
+  const v = settings().fontSize;
+  const r = document.documentElement;
+  if (!v || v === 'normal') r.removeAttribute('data-fs'); else r.setAttribute('data-fs', v);
 }
 
 function renderNav(active) {
@@ -82,6 +88,7 @@ async function boot() {
   }
   applyLang();
   applyTheme();
+  applyFontSize();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
   window.addEventListener('hashchange', route);
   route();
