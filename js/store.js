@@ -1,8 +1,11 @@
 // Data loading, persisted progress (localStorage) and study statistics.
 import { getLang } from './i18n.js';
 
-const KEY = 'ccarp.progress.v1';
 const API_KEY = 'ccarp.apikey';
+const SETTINGS_KEY = 'ccarp.settings.v1';   // theme, language, models… shared by every certification
+const CERT_KEY = 'ccarp.cert';
+// CCAR-P keeps its original key so existing progress survives the move to multiple certifications.
+const progressKey = (id) => (id === 'ccarp' ? 'ccarp.progress.v1' : `${id}.progress.v1`);
 
 export const DEFAULT_SETTINGS = {
   theme: 'auto',
@@ -18,7 +21,8 @@ export const DEFAULT_SETTINGS = {
 };
 
 export const store = {
-  domains: [], questions: [], plan: {}, labs: [], caseStudy: {},
+  certs: [], cert: null,
+  domains: [], questions: [], plan: { weeks: [] }, labs: [], caseStudy: {},
   progress: null,
 };
 
@@ -29,25 +33,51 @@ const set = (k, v) => { try { localStorage.setItem(k, v); return true; } catch {
 const original = {};
 const overlays = {};
 
+const json = (path) => fetch('data/' + path).then((r) => {
+  if (!r.ok) throw new Error('Cannot load data/' + path);
+  return r.json();
+});
+// Translation overlays are optional: a missing file just means English is shown.
+const overlay = (id, lang, f) => fetch(`data/${id}/${lang}/${f}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+
 export async function loadData() {
-  const j = (f) => fetch('data/' + f).then((r) => {
-    if (!r.ok) throw new Error('Cannot load data/' + f);
-    return r.json();
-  });
+  store.certs = await json('certs.json');
+  const saved = get(CERT_KEY);
+  await loadCert(store.certs.some((c) => c.id === saved) ? saved : store.certs[0].id);
+}
+
+/** Load one certification's content and its own progress. */
+export async function loadCert(id) {
+  const cert = store.certs.find((c) => c.id === id);
+  if (!cert) throw new Error('Unknown certification: ' + id);
+  const F = cert.features;
+  const opt = (on, f, fallback) => (on ? json(`${id}/${f}`) : Promise.resolve(fallback));
   const [d, q, p, l, c] = await Promise.all([
-    j('domains.json'), j('questions.json'), j('plan.json'), j('labs.json'), j('case.json'),
+    json(`${id}/domains.json`), json(`${id}/questions.json`),
+    opt(F.plan, 'plan.json', { weeks: [] }), opt(F.labs, 'labs.json', []), opt(F.case, 'case.json', { decisions: [] }),
   ]);
   original.domains = d.sort((a, b) => a.number - b.number);
   original.questions = q;
   original.plan = p;
   original.labs = l;
   original.caseStudy = c;
-  // Translation overlays are optional: a missing file just means English is shown.
-  const o = (lang, f) => fetch(`data/${lang}/${f}`).then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
-  const [vd, vq, vp, vl, vc] = await Promise.all(['domains', 'questions', 'plan', 'labs', 'case'].map((f) => o('vi', f + '.json')));
+  const names = ['domains', 'questions', 'plan', 'labs', 'case'];
+  const has = (lang) => (cert.overlays || []).includes(lang);
+  const [vd, vq, vp, vl, vc] = await Promise.all(names.map((f) => (has('vi') ? overlay(id, 'vi', f + '.json') : {})));
   overlays.vi = { domains: vd, questions: vq, plan: vp, labs: vl, caseStudy: vc };
-  store.progress = normalize(parse(get(KEY)));
+  store.cert = cert;
+  set(CERT_KEY, id);
+  store.progress = normalize(parse(get(progressKey(id))));
   applyContentLang();
+}
+
+/** Short summary of saved progress for a certification, for the picker (reads storage only). */
+export function certSummary(id) {
+  const p = parse(get(progressKey(id)));
+  const entries = Object.values(p?.questions || {});
+  const answered = entries.length;
+  const right = entries.filter((e) => e.lastCorrect).length;
+  return { answered, right, mocks: (p?.mocks || []).length };
 }
 
 const pick = (target, src, fields) => {
@@ -71,7 +101,7 @@ export function applyContentLang() {
 
   const p = clone(original.plan), op = ov.plan || {};
   if (op.summary) p.summary = op.summary;
-  for (const w of p.weeks) {
+  for (const w of p.weeks || []) {
     pick(w, op.weeks?.[w.number], ['title', 'dates', 'goal']);
     for (const t of w.tasks) if (op.tasks?.[t.id]) t.text = op.tasks[t.id];
   }
@@ -79,7 +109,7 @@ export function applyContentLang() {
 
   const c = clone(original.caseStudy), oc = ov.caseStudy || {};
   pick(c, oc, ['tagline', 'background', 'facts', 'constraints']);
-  for (const dec of c.decisions) pick(dec, oc.decisions?.[dec.id], ['title', 'situation', 'prompt', 'modelAnswer']);
+  for (const dec of c.decisions || []) pick(dec, oc.decisions?.[dec.id], ['title', 'situation', 'prompt', 'modelAnswer']);
   store.caseStudy = c;
 }
 
@@ -94,14 +124,17 @@ function normalize(p) {
   p.caseNotesAt ||= {};   // ISO time of the last edit of each note, used when merging devices
   p.updatedAt ||= '';
   p.labsRun ||= [];
-  p.settings = { ...DEFAULT_SETTINGS, ...(p.settings || {}) };
+  // Settings are shared by all certifications. The first run after an upgrade adopts the CCAR-P ones.
+  const shared = parse(get(SETTINGS_KEY)) || parse(get(progressKey('ccarp')))?.settings || p.settings || {};
+  p.settings = { ...DEFAULT_SETTINGS, ...shared };
   return p;
 }
 
 export const settings = () => store.progress.settings;
 export const save = () => {
   store.progress.updatedAt = new Date().toISOString();
-  return set(KEY, JSON.stringify(store.progress));
+  set(SETTINGS_KEY, JSON.stringify(store.progress.settings));
+  return set(progressKey(store.cert.id), JSON.stringify(store.progress));
 };
 
 /** Save a case-study note and remember when it was edited (so a newer edit on another device can win). */
@@ -121,7 +154,7 @@ export function setApiKey(k) {
 export function exportProgress() { return JSON.stringify(store.progress, null, 2); }
 export function importProgress(text) {
   const p = JSON.parse(text);
-  if (!p || typeof p !== 'object' || !p.questions) throw new Error('Not a CCAR-P progress file.');
+  if (!p || typeof p !== 'object' || !p.questions) throw new Error('Not a progress file.');
   store.progress = normalize(p);
   save();
 }

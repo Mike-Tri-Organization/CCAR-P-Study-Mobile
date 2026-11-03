@@ -1,6 +1,6 @@
 {
-  "name": "CCAR-P Study",
-  "short_name": "CCAR-P",
+  "name": "Claude Cert Study",
+  "short_name": "Cert Study",
   "description": "Study app for the Claude Certified Architect – Professional exam.",
   "start_url": "./index.html",
   "scope": "./",

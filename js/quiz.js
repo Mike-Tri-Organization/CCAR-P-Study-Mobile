@@ -133,7 +133,7 @@ export function practice(root, arg) {
 
 // ======================================================================== mock exam
 
-const minutesFor = (n) => Math.ceil(n * 120 / 63);
+const minutesFor = (n) => Math.ceil(n * store.cert.exam.minutes / store.cert.exam.questions);
 
 function pickMock(count) {
   const pool = shuffled(store.questions);
@@ -161,7 +161,9 @@ export function mock(root) {
 
   mount(root,
     h('h1', null, 'Mock exam'),
-    h('p', { class: 'lede' }, 'Timed at the real pace — 63 questions in 120 minutes. Sampled by domain weight. No feedback until you finish.'),
+    h('p', { class: 'lede' }, store.cert.exam.official
+      ? T('Timed at the real pace — {q} questions in {m} minutes. Sampled by domain weight. No feedback until you finish.', { q: store.cert.exam.questions, m: store.cert.exam.minutes })
+      : T('Timed at a practice pace — {q} questions in {m} minutes (check the official exam guide for the real format). Sampled by domain weight. No feedback until you finish.', { q: store.cert.exam.questions, m: store.cert.exam.minutes })),
     h('div', { class: 'card accent' },
       h('div', { class: 'eyebrow' }, 'Pick a length'),
       chips([['20', T('{q} · {m} min', { q: 20, m: minutesFor(20) })], ['40', T('{q} · {m} min', { q: 40, m: minutesFor(40) })], [String(all), T('All {q} · {m} min', { q: all, m: minutesFor(all) })]], size, (v) => { size = v; }),

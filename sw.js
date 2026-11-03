@@ -1,10 +1,14 @@
 // Offline-first service worker. Bump VERSION when shipping new files or data.
-const VERSION = 'ccarp-v6';
+const VERSION = 'ccarp-v7';
 const SHELL = [
   './', 'index.html', 'styles.css', 'manifest.webmanifest',
   'js/app.js', 'js/i18n.js', 'js/lang/vi.js', 'js/store.js', 'js/ui.js', 'js/claude.js', 'js/labs.js', 'js/quiz.js', 'js/views.js',
-  'data/domains.json', 'data/questions.json', 'data/plan.json', 'data/labs.json', 'data/case.json',
-  'data/vi/domains.json', 'data/vi/questions.json', 'data/vi/plan.json', 'data/vi/labs.json', 'data/vi/case.json',
+  'data/certs.json',
+  'data/ccarp/domains.json', 'data/ccarp/questions.json', 'data/ccarp/plan.json', 'data/ccarp/labs.json', 'data/ccarp/case.json',
+  'data/ccarp/vi/domains.json', 'data/ccarp/vi/questions.json', 'data/ccarp/vi/plan.json', 'data/ccarp/vi/labs.json', 'data/ccarp/vi/case.json',
+  'data/ccarf/domains.json', 'data/ccarf/questions.json',
+  'data/ccdv-f/domains.json', 'data/ccdv-f/questions.json',
+  'data/ccao-f/domains.json', 'data/ccao-f/questions.json',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 

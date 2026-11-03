@@ -183,7 +183,7 @@ textarea.input { resize: vertical; }
     top: 0; right: auto; width: var(--side); flex-direction: column; gap: 4px;
     border-top: 0; border-right: 1px solid var(--line); padding: 0 12px 16px; overflow-y: auto;
   }
-  #nav::before { content: "CCAR-P Study"; display: block; padding: 24px 12px 20px; font-size: 18px; font-weight: 700; color: var(--ink); }
+  #nav::before { content: attr(data-brand); display: block; padding: 24px 12px 20px; font-size: 18px; font-weight: 700; color: var(--ink); }
   .navitem { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 48px; padding: 0 12px; border-radius: 10px; font-size: 15px; }
   .navitem.on { background: var(--accent-soft); }
   .navitem svg { flex: none; }

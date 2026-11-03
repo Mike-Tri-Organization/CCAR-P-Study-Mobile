@@ -1,7 +1,7 @@
 // Dashboard, study plan, domains, labs, case study and settings.
 import {
   store, save, settings, DEFAULT_SETTINGS, domainById, domainStats, domainAccuracy, readiness,
-  getApiKey, setApiKey, exportProgress, importProgress, resetProgress, setCaseNote,
+  getApiKey, setApiKey, exportProgress, importProgress, resetProgress, setCaseNote, certSummary,
 } from './store.js';
 import { h, mount, pct, ring, bars, bullets, chips, toast, download } from './ui.js';
 import * as C from './claude.js';
@@ -30,7 +30,8 @@ const dot = (id) => {
 
 export function dashboard(root) {
   const p = store.progress;
-  const left = daysUntil(store.plan.examTarget);
+  const F = store.cert.features;
+  const left = F.plan ? daysUntil(store.plan.examTarget) : null;
   const r = readiness();
   const tasks = store.plan.weeks.flatMap((w) => w.tasks);
   const due = tasks.filter((t) => !p.planDone.includes(t.id) && t.date <= today());
@@ -43,8 +44,11 @@ export function dashboard(root) {
 
   mount(root,
     h('h1', null, 'Dashboard'),
+    h('a', { class: 'card tap cert-chip', href: '#/certs' },
+      h('div', { class: 'eyebrow' }, store.cert.level),
+      h('b', null, store.cert.name), h('span', { class: 'small' }, ' · ', 'Change')),
     h('p', { class: 'lede' }, new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })),
-    h('div', { class: 'card accent' },
+    F.plan && h('div', { class: 'card accent' },
       h('div', { class: 'eyebrow' }, 'Exam sprint'),
       h('div', { class: 'big' }, left > 0 ? T('{n} days', { n: left }) : left === 0 ? 'Today' : 'Past target'),
       h('p', { class: 'small' }, T('Target {date} · plan {done}/{total} tasks done', { date: store.plan.examTarget, done: doneN, total: tasks.length }))),
@@ -58,8 +62,9 @@ export function dashboard(root) {
       h('div', { class: 'actions row wrap' },
         h('a', { class: 'btn', href: '#/practice' }, 'Practice'),
         h('a', { class: 'btn ghost', href: '#/mock' }, 'Mock exam'),
-        h('a', { class: 'btn ghost', href: '#/labs' }, 'Labs'))),
-    h('div', { class: 'card' },
+        F.labs && h('a', { class: 'btn ghost', href: '#/labs' }, 'Labs'),
+        h('a', { class: 'btn ghost', href: '#/domains' }, 'Domains'))),
+    F.plan && h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, due.length ? 'Due today & overdue' : 'Up next'),
       next.length === 0 ? h('p', { class: 'small' }, 'All plan tasks done.') : next.slice(0, 6).map(taskRow),
       h('a', { class: 'link', href: '#/plan' }, 'Open full plan')),
@@ -81,7 +86,7 @@ export function dashboard(root) {
       h('div', { class: 'eyebrow' }, 'Mock exams'),
       bars(p.mocks.slice(-10).map((m) => (m.total ? m.correct / m.total : 0)), p.mocks.slice(-10).map((m) => (m.date || '').slice(5, 10)), 0.8),
       h('p', { class: 'small' }, 'Line = 80% target.')),
-    !C.hasKey() && h('div', { class: 'card' },
+    F.labs && !C.hasKey() && h('div', { class: 'card' },
       h('div', { class: 'eyebrow' }, 'Lab setup'),
       h('p', { class: 'small' }, 'Labs call the real Claude API. Add your API key in Settings to run them.'),
       h('a', { class: 'link', href: '#/settings' }, 'Open Settings')));
@@ -131,7 +136,9 @@ export function plan(root) {
 export function domains(root) {
   mount(root,
     h('h1', null, 'Domains'),
-    h('p', { class: 'lede' }, 'Seven domains from the July 2026 guide, ordered by number.'),
+    h('p', { class: 'lede' }, store.cert.id === 'ccarp'
+      ? 'Seven domains from the July 2026 guide, ordered by number.'
+      : T('{n} domains, ordered by number. Weights are approximate study weights, not official exam percentages.', { n: store.domains.length })),
     store.domains.map((d) => {
       const a = domainAccuracy(d.id);
       return h('details', { class: 'card' },
@@ -140,6 +147,24 @@ export function domains(root) {
         h('div', { class: 'eyebrow' }, 'Key ideas'), bullets(d.keyIdeas),
         h('div', { class: 'eyebrow bad' }, 'Traps'), bullets(d.traps, 'bad'),
         h('a', { class: 'btn', href: '#/practice/' + d.id }, 'Practice this domain'));
+    }));
+}
+
+// ======================================================================== certifications
+
+export function certs(root, { switchCert }) {
+  mount(root,
+    h('h1', null, 'Certifications'),
+    h('p', { class: 'lede' }, 'Pick what you are studying. Each certification keeps its own progress, mock history and backups.'),
+    store.certs.map((c) => {
+      const on = c.id === store.cert.id;
+      // Live numbers for the open certification; stored numbers for the others.
+      const sm = on ? { answered: Object.keys(store.progress.questions).length, mocks: store.progress.mocks.length } : certSummary(c.id);
+      return h('a', { class: 'card tap cert-card' + (on ? ' accent' : ''), href: '#/', 'aria-current': on ? 'true' : null, onClick: (e) => { e.preventDefault(); switchCert(c.id); } },
+        h('div', { class: 'eyebrow' }, c.level + (on ? ' · ' + T('Current') : '')),
+        h('b', null, `${c.short} — ${c.name}`),
+        h('p', { class: 'small' }, c.blurb),
+        h('p', { class: 'small' }, T('Answered: {a} · Mock exams: {m}', { a: sm.answered, m: sm.mocks })));
     }));
 }
 
@@ -231,7 +256,7 @@ export function labs(root, arg) {
       if (!codeBox.hidden) { codeBox.hidden = true; return; }
       codeBox.hidden = false;
       if (!codeCache[lab.file]) {
-        try { codeCache[lab.file] = await (await fetch('data/labs/' + lab.file)).text(); }
+        try { codeCache[lab.file] = await (await fetch(`data/${store.cert.id}/labs/` + lab.file)).text(); }
         catch { codeCache[lab.file] = '(could not load ' + lab.file + ' — open once online to cache it)'; }
       }
       codeBox.textContent = codeCache[lab.file];
@@ -293,6 +318,8 @@ export function settingsView(root, hooks) {
       chips(THEMES, S.theme, (v) => { S.theme = v; save(); applyTheme(); })),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Text size'),
       chips(FONT_SIZES, S.fontSize, (v) => { S.fontSize = v; save(); applyFontSize(); })),
+    h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Certification'),
+      h('p', { class: 'small' }, store.cert.name), h('a', { class: 'link', href: '#/certs' }, 'Change certification')),
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Claude API key'),
       h('p', { class: 'small' }, 'Stored only in this browser on this device and sent only to api.anthropic.com. Use a key with a low spend limit; anyone with access to this phone profile can read it.'),
       keyIn,
@@ -311,12 +338,12 @@ export function settingsView(root, hooks) {
     h('div', { class: 'card' }, h('div', { class: 'eyebrow' }, 'Your data'),
       h('p', { class: 'small' }, 'Progress lives on this device. Export a backup file, or import one made on this phone or from another browser.'),
       h('div', { class: 'actions row wrap' },
-        h('button', { class: 'btn ghost', type: 'button', onClick: () => download('ccarp-progress.json', exportProgress()) }, 'Export'),
+        h('button', { class: 'btn ghost', type: 'button', onClick: () => download(store.cert.id + '-progress.json', exportProgress()) }, 'Export'),
         h('button', { class: 'btn ghost', type: 'button', onClick: () => fileIn.click() }, 'Import'),
         h('button', {
           class: 'btn danger', type: 'button',
           onClick: () => { if (confirm(T('Erase all progress on this device?'))) { resetProgress(); toast('Progress reset'); applyTheme(); applyFontSize(); applyLang(); settingsView(root, hooks); } },
         }, 'Reset progress')),
       fileIn),
-    h('p', { class: 'small center' }, T('{q} questions · {l} labs · v{v}', { q: store.questions.length, l: store.labs.length, v: '1.1.0' })));
+    h('p', { class: 'small center' }, T('{q} questions · {l} labs · v{v}', { q: store.questions.length, l: store.labs.length, v: '1.2.0' })));
 }

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "ccarp",
+    "short": "CCAR-P",
+    "level": "Professional",
+    "name": "Claude Certified Architect – Professional",
+    "blurb": "Design and govern Claude-based solutions end to end: architecture, models, integration, evaluation, risk and stakeholders.",
+    "features": {
+      "plan": true,
+      "labs": true,
+      "case": true
+    },
+    "exam": {
+      "questions": 63,
+      "minutes": 120,
+      "official": true
+    },
+    "overlays": ["vi"]
+  },
+  {
+    "id": "ccarf",
+    "short": "CCAR-F",
+    "level": "Foundations",
+    "name": "Claude Certified Architect – Foundations",
+    "blurb": "Agentic architecture, tool design and MCP, Claude Code configuration, structured output and context reliability.",
+    "features": {
+      "plan": false,
+      "labs": false,
+      "case": false
+    },
+    "exam": {
+      "questions": 60,
+      "minutes": 120,
+      "official": false
+    },
+    "overlays": []
+  },
+  {
+    "id": "ccdv-f",
+    "short": "CCDV-F",
+    "level": "Foundations",
+    "name": "Claude Certified Developer – Foundations",
+    "blurb": "Build with the Claude API: agents, tools and MCP, Claude Code, context and prompt engineering, evaluation and security.",
+    "features": {
+      "plan": false,
+      "labs": false,
+      "case": false
+    },
+    "exam": {
+      "questions": 60,
+      "minutes": 90,
+      "official": false
+    },
+    "overlays": []
+  },
+  {
+    "id": "ccao-f",
+    "short": "CCAO-F",
+    "level": "Foundations",
+    "name": "Claude Certified Associate – Foundations",
+    "blurb": "Everyday professional use of Claude: prompting, checking outputs, choosing products and models, projects, and responsible use.",
+    "features": {
+      "plan": false,
+      "labs": false,
+      "case": false
+    },
+    "exam": {
+      "questions": 60,
+      "minutes": 90,
+      "official": false
+    },
+    "overlays": []
+  }
+]
