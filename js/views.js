@@ -79,7 +79,8 @@ export function dashboard(root) {
         const a = domainAccuracy(d.id), s = domainStats(d.id);
         return h('div', { class: 'meter' },
           h('div', { class: 'meter-top' }, h('span', null, dot(d.id), d.name, h('span', { class: 'small' }, ` ${d.weight}%`)), h('span', null, pct(a))),
-          h('div', { class: 'meter-bar' }, h('div', { class: a >= 0.8 ? 'good' : '', style: `width:${(a || 0) * 100}%` })),
+          h('div', { class: 'meter-bar', role: 'progressbar', 'aria-label': d.name, 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round((a || 0) * 100)) },
+            h('div', { class: a >= 0.8 ? 'good' : '', style: `width:${(a || 0) * 100}%` })),
           h('div', { class: 'small' }, T('{a}/{b} seen', { a: s.seen, b: s.total })));
       })),
     p.mocks.length > 0 && h('div', { class: 'card' },

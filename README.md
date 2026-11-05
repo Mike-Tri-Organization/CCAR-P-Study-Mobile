@@ -72,6 +72,10 @@ Content updates: edit `data/<cert>/questions.json` etc. (same format as the desk
 3. Add the two files to `SHELL` in `sw.js` and bump `VERSION`.
 4. Run `node --test tests/*.test.mjs`.
 
+## Accessibility
+
+The UI was audited with the UI/UX Pro Max skill's UX guidelines (WCAG-oriented). All text/background pairs in the five themes meet 4.5:1; correct and wrong answers carry a ✓/✗ mark and screen-reader text, not only colour; the verdict is announced via a polite live region; progress bars and the readiness ring have roles and labels; interactive targets are at least 44 px; focus moves to the new screen or question; sticky bars never cover a focused control (`scroll-padding`); smooth scrolling is skipped under *reduce motion*.
+
 ## Syncing progress between devices (work in progress)
 
 Progress lives in this browser (`localStorage`) and in the Windows app (`progress.json`); both use the same JSON shape. `js/merge.js` defines how two copies are merged, and the Windows app implements the same rules in `ProgressMerge.cs`:

@@ -99,6 +99,7 @@ function route() {
   root.dataset.view = (ROUTES[key] ? key || 'home' : 'home') + (arg ? '-detail' : '');
   try { fn(arg); } catch (e) { root.replaceChildren(h('div', { class: 'card' }, h('b', null, 'Something went wrong'), h('p', { class: 'small' }, e.message))); console.error(e); }
   window.scrollTo(0, 0);
+  root.focus({ preventScroll: true });   // announce the new screen to assistive tech; main has no outline
 }
 
 async function boot() {

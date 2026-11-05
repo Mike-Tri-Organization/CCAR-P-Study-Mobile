@@ -11,7 +11,7 @@ function questionCard(q, order, preselected, onChange) {
   let locked = false;
   const rows = [];
   const el = h('div', { class: 'qcard' },
-    h('p', { class: 'stem' }, q.stem),
+    h('p', { class: 'stem', tabindex: '-1' }, q.stem),
     isMulti(q) && h('span', { class: 'pill warn' }, T('Select {n} — no partial credit', { n: q.answer.length })));
 
   order.forEach((orig, pos) => {
@@ -46,8 +46,14 @@ function questionCard(q, order, preselected, onChange) {
       rows.forEach(([orig, row]) => {
         row.classList.remove('picked');
         row.disabled = true;
-        if (q.answer.includes(orig)) row.classList.add('right');
-        else if (sel.has(orig)) row.classList.add('wrong');
+        // Colour is never the only signal: add a mark and a text alternative for screen readers.
+        if (q.answer.includes(orig)) {
+          row.classList.add('right');
+          row.append(h('span', { class: 'mark', 'aria-hidden': 'true' }, '✓'), h('span', { class: 'sr' }, T('Correct answer')));
+        } else if (sel.has(orig)) {
+          row.classList.add('wrong');
+          row.append(h('span', { class: 'mark', 'aria-hidden': 'true' }, '✗'), h('span', { class: 'sr' }, T('Your answer: incorrect')));
+        }
       });
     },
   };
@@ -74,7 +80,8 @@ export function practice(root, arg) {
     const start = h('button', { class: 'btn', type: 'button' }, 'Start');
     const upd = () => {
       const n = pool().length;
-      count.textContent = n === 1 ? T('1 question matches') : T('{n} questions match', { n });
+      count.textContent = n === 0 && mode !== 'all' ? T('Nothing here yet. Answer some questions first, or choose "All".')
+        : n === 1 ? T('1 question matches') : T('{n} questions match', { n });
       start.disabled = n === 0;
     };
     start.addEventListener('click', () => run(shuffled(pool())));
@@ -100,7 +107,7 @@ export function practice(root, arg) {
       const d = domainById(q.domain);
       const card = questionCard(q, order, [], () => check.disabled = false);
       const check = h('button', { class: 'btn', type: 'button', disabled: true, onClick: onCheck }, 'Check answer');
-      const fbSlot = h('div');
+      const fbSlot = h('div', { 'aria-live': 'polite' });   // read the verdict and explanation once it appears
       function onCheck() {
         const ok = sameSet(card.selected(), new Set(q.answer));
         record(q, ok); save();
@@ -109,15 +116,18 @@ export function practice(root, arg) {
         fbSlot.replaceChildren(feedback(q, ok));
         check.replaceWith(h('button', { class: 'btn', type: 'button', onClick: () => { i++; step(); } },
           i + 1 >= qs.length ? 'Finish' : 'Next question'));
-        fbSlot.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        fbSlot.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
       }
       mount(root,
         h('div', { class: 'topline' },
           h('span', { class: 'small' }, T('Question {i} of {n}', { i: i + 1, n: qs.length }) + (d ? ' · ' + d.name : '')),
           h('button', { class: 'link', type: 'button', onClick: () => practice(root) }, 'End')),
-        h('div', { class: 'progress' }, h('div', { style: `width:${(i / qs.length) * 100}%` })),
+        h('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Progress', 'aria-valuemin': '0', 'aria-valuemax': String(qs.length), 'aria-valuenow': String(i) },
+          h('div', { style: `width:${(i / qs.length) * 100}%` })),
         card.el, fbSlot, h('div', { class: 'actions' }, check));
       window.scrollTo(0, 0);
+      // The button that was pressed no longer exists: move focus to the new question so keyboard and screen-reader users keep their place.
+      card.el.querySelector('.stem')?.focus({ preventScroll: true });
     };
     const done = () => mount(root,
       h('h1', null, 'Session complete'),

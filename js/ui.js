@@ -59,7 +59,8 @@ export function ring(frac, label, sub) {
     `<circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--line)" stroke-width="10"/>` +
     `<circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" ` +
     `stroke-dasharray="${c * f} ${c}" transform="rotate(-90 60 60)"/>`;
-  return h('div', { class: 'ring-wrap' }, svg,
+  svg.setAttribute('aria-hidden', 'true');
+  return h('div', { class: 'ring-wrap', role: 'img', 'aria-label': [label, sub].filter(Boolean).map((x) => t(x)).join(', ') }, svg,
     h('div', { class: 'ring-text' }, h('div', { class: 'ring-num' }, label), sub && h('div', { class: 'small' }, sub)));
 }
 
