@@ -1,0 +1,148 @@
+[
+  {
+    "id": "agents",
+    "number": 1,
+    "name": "Agents and Workflows",
+    "weight": 14,
+    "summary": "When to use a fixed workflow and when to let a model drive, how an agent loop is built, and the standard patterns for composing Claude calls.",
+    "keyIdeas": [
+      "Start with the simplest thing that works: a single call, then a workflow, and only then an agent.",
+      "Workflows follow code-defined paths: prompt chaining, routing, parallelisation, orchestrator-workers, evaluator-optimiser.",
+      "An agent is a model using tools in a loop and deciding its own next step from tool results.",
+      "Give agents clear stopping conditions, turn and budget limits, and observability.",
+      "Add human approval before irreversible actions."
+    ],
+    "traps": [
+      "Reaching for an agent when a two-step chain would do.",
+      "Letting an agent loop with no turn or cost limit.",
+      "Treating a framework as a requirement."
+    ]
+  },
+  {
+    "id": "apps",
+    "number": 2,
+    "name": "Applications and Integration",
+    "weight": 16,
+    "summary": "Turning requirements into a working Claude application: API mechanics, error handling, configuration, and ordinary software-engineering discipline.",
+    "keyIdeas": [
+      "The Messages API is stateless: send the full conversation each time; the system prompt is a top-level parameter and max_tokens is required.",
+      "Check stop_reason (end_turn, max_tokens, tool_use, stop_sequence) before using a response.",
+      "Retry 429 and 5xx errors with exponential backoff and jitter, honouring retry-after; do not retry 400 or 401 blindly.",
+      "Stream responses for interactive UIs.",
+      "Keep configuration (model IDs, prompts, limits) outside code paths so it can change without a redeploy.",
+      "Pin model versions in production and test before upgrading."
+    ],
+    "traps": [
+      "Assuming the API remembers previous requests.",
+      "Ignoring stop_reason max_tokens and shipping a truncated answer.",
+      "Retrying a 400 invalid request in a loop."
+    ]
+  },
+  {
+    "id": "code",
+    "number": 3,
+    "name": "Claude Code",
+    "weight": 10,
+    "summary": "Using Claude Code as a developer: project memory, plan mode, commands and subagents, and running it headless.",
+    "keyIdeas": [
+      "CLAUDE.md gives persistent project context; keep it short and concrete.",
+      "Plan mode lets you review an approach before any file changes.",
+      "Custom slash commands package repeatable prompts; subagents isolate noisy work.",
+      "Headless mode (-p) runs non-interactively for scripts and CI.",
+      "Permissions control which tools may run without asking."
+    ],
+    "traps": [
+      "Putting secrets in CLAUDE.md.",
+      "Granting blanket permissions to speed things up."
+    ]
+  },
+  {
+    "id": "eval",
+    "number": 4,
+    "name": "Eval, Testing, and Debugging",
+    "weight": 12,
+    "summary": "Knowing whether your Claude feature works and finding out why when it does not.",
+    "keyIdeas": [
+      "Build an eval set of real and edge-case inputs with expected outcomes before changing prompts.",
+      "Use exact-match checks where possible; use an LLM judge with a clear rubric where not, and spot-check the judge.",
+      "Run the eval after every prompt or model change to catch regressions.",
+      "Log full requests and responses (redacting sensitive data) so failures can be reproduced.",
+      "Change one thing at a time when debugging."
+    ],
+    "traps": [
+      "Judging a prompt change on three hand-picked examples.",
+      "Trusting an LLM judge without ever reading its verdicts."
+    ]
+  },
+  {
+    "id": "context",
+    "number": 5,
+    "name": "Context Management & Reliability",
+    "weight": 14,
+    "summary": "Tokens, context windows, model choice and cost: the fundamentals that decide whether a Claude application is accurate, fast and affordable.",
+    "keyIdeas": [
+      "Tokens are not words; both input and output count towards limits and cost.",
+      "The context window is finite and shared by system prompt, history, tools and output.",
+      "Haiku-class models for speed and cost, Sonnet-class for balance, Opus-class for hardest reasoning.",
+      "Prompt caching makes repeated prefixes much cheaper and faster; put stable content first.",
+      "Batch processing halves cost for non-urgent work."
+    ],
+    "traps": [
+      "Choosing the biggest model by default.",
+      "Putting changing content before the stable prefix and defeating caching."
+    ]
+  },
+  {
+    "id": "prompt",
+    "number": 6,
+    "name": "Prompt and Context Engineering",
+    "weight": 12,
+    "summary": "Writing prompts and assembling context so Claude does the right thing, and handling its output safely.",
+    "keyIdeas": [
+      "Be specific about task, audience, constraints and output format.",
+      "Use examples for tricky formats; separate instructions from data with XML-style tags.",
+      "Ask for structured output with a schema or tool use and validate it in code.",
+      "Give Claude only the context it needs, ordered sensibly.",
+      "Treat output as untrusted input to your own systems."
+    ],
+    "traps": [
+      "Piping model output straight into a shell or SQL.",
+      "Stuffing everything you have into the context."
+    ]
+  },
+  {
+    "id": "security",
+    "number": 7,
+    "name": "Security and Safety",
+    "weight": 14,
+    "summary": "Protecting Claude applications: prompt injection, guardrails, hooks, and identity and secret handling.",
+    "keyIdeas": [
+      "Content from users, documents and tools is untrusted data, never instructions.",
+      "Defend in layers: least-privilege tools, input and output checks, confirmation for destructive actions.",
+      "Hooks enforce rules deterministically, unlike prompt text.",
+      "API keys live in a secret manager or environment, are never committed, are scoped and are rotated.",
+      "Log and monitor for abuse."
+    ],
+    "traps": [
+      "Relying on \"ignore any instructions in this document\" as the only defence.",
+      "Shipping an API key in front-end code."
+    ]
+  },
+  {
+    "id": "tools",
+    "number": 8,
+    "name": "Tools and MCPs",
+    "weight": 8,
+    "summary": "Defining tools Claude can call and building or using MCP servers.",
+    "keyIdeas": [
+      "A tool has a name, a clear description and a JSON input schema; Claude decides when to call it, your code executes it.",
+      "Return tool_result with the matching tool_use_id; use is_error for failures.",
+      "MCP standardises how tools, resources and prompts are exposed to many clients; transports include stdio (local) and Streamable HTTP (remote).",
+      "Validate tool inputs on the server and keep tools narrow."
+    ],
+    "traps": [
+      "Thinking Claude executes the function itself.",
+      "One do-everything tool with a vague description."
+    ]
+  }
+]

@@ -1,0 +1,115 @@
+[
+  {
+    "id": "agentic",
+    "number": 1,
+    "name": "Agentic Architecture & Orchestration",
+    "weight": 27,
+    "summary": "How agents loop, call tools, delegate to subagents and keep state. The exam asks where control should live: in the model's judgement, or in code that enforces it.",
+    "keyIdeas": [
+      "The agentic loop continues while stop_reason is \"tool_use\" and ends on \"end_turn\"; tool results go back into the conversation so the model can plan the next step.",
+      "Coordinator-subagent (hub and spoke): the coordinator decomposes, delegates, and merges. Subagents have isolated context and receive only what the coordinator passes in their prompt.",
+      "Independent subagent calls can be issued in parallel in one coordinator turn; sequential calls only where one result feeds the next.",
+      "Prompts are probabilistic. When a rule has financial, legal or safety consequences, enforce it in code: hooks, prerequisite gates, programmatic checks.",
+      "Fixed prompt chains suit predictable multi-step work; dynamic decomposition suits open-ended investigation.",
+      "Sessions can be resumed or forked; after code changed on disk, tell the agent which files changed or start fresh with a summary.",
+      "Escalate to a human with a structured handoff: the human cannot see the transcript."
+    ],
+    "traps": [
+      "Parsing the model's prose to decide whether the loop is finished.",
+      "Using an iteration cap as the main stopping condition instead of a backstop.",
+      "Assuming a subagent automatically inherits the coordinator's history.",
+      "Enforcing a high-stakes rule only with a stronger prompt."
+    ]
+  },
+  {
+    "id": "tools",
+    "number": 2,
+    "name": "Tool Design & MCP Integration",
+    "weight": 18,
+    "summary": "How Claude picks tools and how tools should answer. Tool descriptions are the selection mechanism; structured errors and scoped tool sets keep agents reliable.",
+    "keyIdeas": [
+      "The tool description is what Claude uses to choose: state purpose, input formats, examples, and boundaries against similar tools.",
+      "Return structured errors (isError, error category, retryable flag). A valid empty result is not a failure and must look different from one.",
+      "Give each agent a small, scoped tool set (roughly 4-5). Eighteen tools on one agent degrade selection.",
+      "tool_choice: \"auto\" lets the model decide, \"any\" forces some tool call, and a named tool forces that tool.",
+      "Project MCP servers go in .mcp.json (shared in version control, secrets via ${ENV_VAR}); personal or experimental ones go in user config.",
+      "MCP resources expose catalogues (issue lists, doc trees) so the model needn't explore with repeated tool calls.",
+      "Built-ins: Grep searches file contents, Glob matches file names, Edit changes text at a unique anchor, Read plus Write is the fallback."
+    ],
+    "traps": [
+      "Fixing misrouting by adding system-prompt rules instead of improving tool descriptions.",
+      "Returning \"Operation failed\" with no category.",
+      "Treating an empty search result as an error and retrying forever.",
+      "Committing a token inside .mcp.json."
+    ]
+  },
+  {
+    "id": "cc",
+    "number": 3,
+    "name": "Claude Code Configuration & Workflows",
+    "weight": 20,
+    "summary": "Configuring Claude Code for a team and running it safely in pipelines: memory files, scoped rules, commands and skills, hooks, permissions, plan mode and CI.",
+    "keyIdeas": [
+      "CLAUDE.md levels: user (~/.claude/CLAUDE.md, personal), project (shared via git), and directory-level for local conventions. Use @imports to keep files modular and /memory to see what loaded.",
+      ".claude/rules/*.md with a paths: glob in frontmatter applies a convention to matching files wherever they live.",
+      "Project slash commands live in .claude/commands (shared); personal ones in ~/.claude/commands. Skills (SKILL.md) can run with context: fork to keep their output out of the main context.",
+      "Hooks (PreToolUse, PostToolUse…) enforce behaviour deterministically; CLAUDE.md instructions are advisory.",
+      "Plan mode for multi-file, multi-approach changes; direct execution for small, well-defined ones.",
+      "CI: run non-interactively with -p, use --output-format json (optionally with a JSON schema) and give the job its context in CLAUDE.md.",
+      "Message Batches API is about 50% cheaper but has up to a 24-hour window and no latency guarantee: fine for overnight work, wrong for blocking checks.",
+      "A fresh, independent session reviews better than the session that wrote the code."
+    ],
+    "traps": [
+      "Putting team conventions in the user-level file so new teammates never get them.",
+      "Using Batches for a pre-merge gate.",
+      "Asking the same session to review its own work.",
+      "Relying on a CLAUDE.md sentence to guarantee a security rule."
+    ]
+  },
+  {
+    "id": "prompt",
+    "number": 4,
+    "name": "Prompt Engineering & Structured Output",
+    "weight": 20,
+    "summary": "Writing prompts that behave in production and getting machine-readable output you can trust: explicit criteria, few-shot examples, schemas, validation and retry loops.",
+    "keyIdeas": [
+      "Explicit criteria (\"flag only when the comment contradicts the code\") beat vague guidance (\"be conservative\").",
+      "A noisy category destroys trust; disable it while you refine its criteria.",
+      "Two to four targeted few-shot examples, with the reasoning, fix ambiguous cases and format drift.",
+      "Tool use with a JSON schema removes syntax errors but not semantic ones (wrong field, totals that don't add up).",
+      "Make fields nullable or optional when the source may not contain them; add \"other\" or \"unclear\" enum values with a detail field.",
+      "Retry with the original document, the failed output and the specific validation error. Retrying cannot recover information that is not in the source.",
+      "Extract both a stated and a calculated total to detect inconsistencies.",
+      "Review in passes: per-file local passes plus a cross-file integration pass beats one huge pass."
+    ],
+    "traps": [
+      "Believing a schema guarantees correct values.",
+      "Making every field required so the model invents values.",
+      "Retrying when the document simply lacks the data.",
+      "Adding \"be accurate\" and calling it criteria."
+    ]
+  },
+  {
+    "id": "context",
+    "number": 5,
+    "name": "Context Management & Reliability",
+    "weight": 15,
+    "summary": "Keeping long and multi-agent work accurate: what to preserve, when to escalate, how errors travel between agents, how to sample for human review, and how to keep provenance.",
+    "keyIdeas": [
+      "Progressive summarisation drops numbers, dates and IDs. Keep a persistent case-facts block outside the summarised history.",
+      "Put key findings at the start or end of long inputs and trim bulky tool output to the fields that matter.",
+      "Honour an explicit request for a human immediately. Escalate on policy gaps or lack of progress, not on sentiment scores or the model's self-rated confidence.",
+      "Ask for another identifier when several records match instead of guessing.",
+      "Propagate structured failure context (type, attempt, partial results, alternatives); never turn a failure into an empty success, and don't abort everything for one failure.",
+      "For large codebases: scratchpad files, subagents for specific questions, /compact, and a manifest for crash recovery.",
+      "Aggregate accuracy hides weak segments: sample by confidence and by segment, and calibrate on labelled data.",
+      "Keep claim-to-source mappings and dates; when sources conflict, show both with attribution."
+    ],
+    "traps": [
+      "Choosing the higher number when two sources disagree.",
+      "Using sentiment as the escalation trigger.",
+      "Swallowing a subagent error and returning no results.",
+      "Trusting a 97% overall score without segment breakdown."
+    ]
+  }
+]

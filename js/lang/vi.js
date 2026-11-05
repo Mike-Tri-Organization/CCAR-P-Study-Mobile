@@ -225,4 +225,24 @@ export const vi = {
   'MODEL OUTPUT': 'KẾT QUẢ CỦA MÔ HÌNH',
   'AUDIT RECORD (hash of the original, never the text)': 'BẢN GHI KIỂM TOÁN (hash của bản gốc, không bao giờ lưu văn bản)',
   'Appended to the on-device audit log.': 'Đã thêm vào nhật ký kiểm toán trên thiết bị.',
+
+  // certifications
+  'Certification': 'Chứng chỉ',
+  'Certifications': 'Các chứng chỉ',
+  'Change certification': 'Đổi chứng chỉ',
+  'Change': 'Đổi',
+  'Current': 'Đang học',
+  'Professional': 'Chuyên nghiệp',
+  'Foundations': 'Nền tảng',
+  'Pick what you are studying. Each certification keeps its own progress, mock history and backups.': 'Chọn chứng chỉ bạn đang ôn. Mỗi chứng chỉ có tiến độ, lịch sử thi thử và bản sao lưu riêng.',
+  'Answered: {a} · Mock exams: {m}': 'Đã trả lời: {a} · Bài thi thử: {m}',
+  '{n} domains, ordered by number. Weights are approximate study weights, not official exam percentages.': '{n} lĩnh vực, theo thứ tự số. Trọng số chỉ là trọng số ôn tập gần đúng, không phải tỷ lệ chính thức của kỳ thi.',
+  'Timed at the real pace — {q} questions in {m} minutes. Sampled by domain weight. No feedback until you finish.': 'Tính giờ đúng nhịp thật — {q} câu trong {m} phút. Lấy mẫu theo trọng số lĩnh vực. Không có phản hồi cho đến khi bạn nộp bài.',
+  'Timed at a practice pace — {q} questions in {m} minutes (check the official exam guide for the real format). Sampled by domain weight. No feedback until you finish.': 'Tính giờ theo nhịp luyện tập — {q} câu trong {m} phút (xem hướng dẫn kỳ thi chính thức để biết định dạng thật). Lấy mẫu theo trọng số lĩnh vực. Không có phản hồi cho đến khi bạn nộp bài.',
+
+  // accessibility
+  'Correct answer': 'Đáp án đúng',
+  'Your answer: incorrect': 'Câu bạn chọn: chưa đúng',
+  'Progress': 'Tiến độ',
+  'Nothing here yet. Answer some questions first, or choose "All".': 'Chưa có câu nào. Hãy trả lời vài câu trước, hoặc chọn "Tất cả".',
 };

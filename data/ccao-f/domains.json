@@ -1,0 +1,128 @@
+[
+  {
+    "id": "prompting",
+    "number": 1,
+    "name": "Prompting and Task Execution",
+    "weight": 18,
+    "summary": "Writing requests that get useful results from Claude for business and technical work, breaking big jobs into steps, and adapting to the type of task.",
+    "keyIdeas": [
+      "Say who it is for, what you want, what good looks like, and any constraints.",
+      "Give relevant background and examples; say what format you want.",
+      "Break complex requests into steps or ask Claude to plan first.",
+      "Iterate: react to the first draft instead of rewriting everything.",
+      "Match the approach to the task: analysis, writing, coding and brainstorming need different instructions."
+    ],
+    "traps": [
+      "Asking in one vague sentence and blaming the model.",
+      "Pasting a huge task with no structure.",
+      "Starting over each time instead of refining."
+    ]
+  },
+  {
+    "id": "output",
+    "number": 2,
+    "name": "Output Evaluation and Validation",
+    "weight": 16,
+    "summary": "Checking what Claude produces: accuracy, completeness, hallucinations and bias, and deciding when a human must verify.",
+    "keyIdeas": [
+      "Fluent does not mean correct. Check facts, numbers, names and citations against reliable sources.",
+      "Hallucinations are confident but unsupported statements; ask for sources and verify them.",
+      "Consistency checks: compare against your material, or ask again a different way.",
+      "The higher the stakes (legal, medical, financial, public), the more human verification you need.",
+      "Edit and adapt the output for the audience; choose the format that suits the use."
+    ],
+    "traps": [
+      "Trusting a confident tone.",
+      "Treating a citation as real because it looks formatted.",
+      "Sending output to a client without reading it."
+    ]
+  },
+  {
+    "id": "models",
+    "number": 3,
+    "name": "Product and Model Selection",
+    "weight": 14,
+    "summary": "Choosing the right Claude product feature and model for a task, and understanding context and memory limits.",
+    "keyIdeas": [
+      "Faster, lighter models suit simple, high-volume work; more capable models suit complex reasoning; balanced models cover most tasks.",
+      "Different products suit different jobs: chat, Projects for ongoing work, Artifacts for documents and apps, coding tools for developers.",
+      "A conversation has a finite context window; very long chats can lose detail.",
+      "A new chat does not remember an old one unless memory or Projects provide the context."
+    ],
+    "traps": [
+      "Using the most powerful model for every small task.",
+      "Expecting a new chat to know last week's chat."
+    ]
+  },
+  {
+    "id": "workflow",
+    "number": 4,
+    "name": "Workflow Integration and Solution Design",
+    "weight": 14,
+    "summary": "Using Claude to analyse needs, plan, and improve processes, and explaining its value and limits honestly.",
+    "keyIdeas": [
+      "Start with a specific task that is repetitive, text-heavy and low-risk.",
+      "Keep a person in the loop where judgement or accountability matters.",
+      "Pilot with real users, measure time saved and quality, then expand.",
+      "Be clear with stakeholders about what Claude does well and where it needs checks."
+    ],
+    "traps": [
+      "Promising that AI will replace the whole process.",
+      "Skipping a pilot and rolling out to everyone."
+    ]
+  },
+  {
+    "id": "config",
+    "number": 5,
+    "name": "Configuration and Knowledge Management",
+    "weight": 12,
+    "summary": "Setting Claude up for repeat work: Projects, instructions, uploaded knowledge and connectors.",
+    "keyIdeas": [
+      "A Project keeps instructions and knowledge together for a topic or team.",
+      "Good instructions are specific: role, audience, tone, format, and what to do when unsure.",
+      "Keep knowledge files current, named clearly and relevant; remove outdated ones.",
+      "Connectors let Claude use tools and data you authorise; review what access you grant."
+    ],
+    "traps": [
+      "Uploading every file you own.",
+      "Leaving outdated documents in the project.",
+      "Granting broad access to a connector without thinking."
+    ]
+  },
+  {
+    "id": "governance",
+    "number": 6,
+    "name": "Governance, Risk, and Responsible Use",
+    "weight": 14,
+    "summary": "Using Claude appropriately: which tasks fit, how to protect sensitive data, following your organisation's rules, and thinking about ethics.",
+    "keyIdeas": [
+      "Follow your organisation's AI policy and use approved tools and accounts.",
+      "Do not enter confidential, personal or regulated data unless policy and the tool's protections allow it.",
+      "Be transparent when AI helped produce work, when your context requires it.",
+      "Watch for bias, and do not use AI as the sole decision-maker for consequential decisions about people.",
+      "Be accountable: you own what you send."
+    ],
+    "traps": [
+      "Pasting customer records into a personal account.",
+      "Hiding AI use where disclosure is required."
+    ]
+  },
+  {
+    "id": "troubleshoot",
+    "number": 7,
+    "name": "Troubleshooting and Optimization",
+    "weight": 12,
+    "summary": "Diagnosing weak results and improving your approach and workflows.",
+    "keyIdeas": [
+      "Diagnose first: was the request unclear, was context missing, or is the task wrong for AI?",
+      "Change one thing at a time and compare.",
+      "Give feedback that says what is wrong and what to do instead.",
+      "Save prompts that work as templates; standardise repeated workflows.",
+      "Start a fresh chat with a summary when a long conversation drifts."
+    ],
+    "traps": [
+      "Repeating the same request and hoping.",
+      "Rewriting everything at once so you can't tell what helped."
+    ]
+  }
+]
