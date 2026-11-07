@@ -39,7 +39,7 @@ function more() {
   mount(root,
     h('h1', null, 'More'),
     item('#/certs', 'Certification', store.cert.name),
-    F.plan && item('#/plan', 'Study plan', 'Five-week schedule with checkboxes'),
+    F.plan && item('#/plan', 'Study plan', 'Two-week schedule with checkboxes'),
     item('#/domains', 'Domains', 'What is tested and the traps'),
     F.case && item('#/case', 'Case study', 'MekongFreight architecture decisions'),
     item('#/settings', 'Settings', 'Theme, API key, models, backup'));
