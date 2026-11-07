@@ -88,4 +88,4 @@ Progress lives in this browser (`localStorage`) and in the Windows app (`progres
 | Case notes | The note with the later `caseNotesAt` wins; an emptied note deletes it |
 | Settings, API key | Never merged; stay on each device |
 
-Run the tests with `node --test tests/*.test.mjs`. `tests/merge-cases.json` is shared with the Windows repo (keep both copies identical). Signing in with Google and storing the file in Drive is the next step and is not implemented yet.
+Run the tests with `node --test tests/*.test.mjs`. `tests/merge-cases.json` is shared with the Windows repo (keep both copies identical). Automatic sync is not implemented; to move progress between devices, use Settings → Export and Import. On the phone, Import replaces the progress on that device; the Windows app's Import merges the file in using the rules above.
