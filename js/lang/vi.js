@@ -12,7 +12,7 @@ export const vi = {
   'Domains': 'Lĩnh vực',
   'Case study': 'Tình huống',
   'Settings': 'Cài đặt',
-  'Five-week schedule with checkboxes': 'Lịch học 5 tuần, có ô đánh dấu hoàn thành',
+  'Two-week schedule with checkboxes': 'Lịch học 2 tuần, có ô đánh dấu hoàn thành',
   'What is tested and the traps': 'Nội dung thi và các bẫy thường gặp',
   'MekongFreight architecture decisions': 'Các quyết định kiến trúc của MekongFreight',
   'Theme, API key, models, backup': 'Giao diện, API key, mô hình, sao lưu',

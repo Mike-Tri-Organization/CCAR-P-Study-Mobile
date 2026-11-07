@@ -1,78 +1,52 @@
 {
-  "summary": "Five-week sprint on the current (July 2026) exam guide. The exam content changes on December 7, 2026, so book a slot no later than December 4. That leaves a buffer for rescheduling, which must be done at least 48 hours ahead. Time is weighted by domain: Integration and Solution Design get the most, Developer Productivity the least.",
-  "examTarget": "2026-12-04",
+  "summary": "Two-week sprint on the current (July 2026) exam guide, Nov 9 – Nov 22. The exam content changes on December 7, 2026, so any rescheduled slot must still land by December 4; rescheduling must be done at least 48 hours ahead. Time is weighted by domain: Integration and Solution Design get the most, Developer Productivity the least. Each day is heavier than in the old five-week plan, so protect the time.",
+  "examTarget": "2026-11-22",
   "weeks": [
     {
       "number": 1,
-      "title": "Baseline, design patterns, models",
-      "dates": "Nov 2 – Nov 8",
-      "goal": "Know your starting point and master the call → workflow → agent decision.",
+      "title": "Baseline, design, models, integration",
+      "dates": "Nov 9 – Nov 15",
+      "goal": "Know your starting point, then cover the three heaviest domains: Solution Design, Models and Integration (49% of the exam).",
       "tasks": [
-        { "id": "w1-1", "date": "2026-11-02", "domain": "stake", "kind": "admin", "text": "Check eligibility: sign in to the Anthropic Partner Academy with your company email. If the domain isn't recognized, request it now (takes 7–10 days).", "link": "" },
-        { "id": "w1-2", "date": "2026-11-02", "domain": "", "kind": "mock", "text": "Baseline: 20-question mock exam, timed. Don't study first.", "link": "mock" },
-        { "id": "w1-3", "date": "2026-11-03", "domain": "design", "kind": "read", "text": "Read the Solution Design domain card. Write one sentence for when you'd choose a single call, a workflow, an agent, and multi-agent.", "link": "domains" },
-        { "id": "w1-4", "date": "2026-11-04", "domain": "design", "kind": "lab", "text": "Lab L1 — Routing workflow. Run it with three different tickets; note which category each goes to.", "link": "lab:L1" },
-        { "id": "w1-5", "date": "2026-11-05", "domain": "models", "kind": "lab", "text": "Lab L2 — Model comparison. Record latency and cost for each tier on the same task.", "link": "lab:L2" },
-        { "id": "w1-6", "date": "2026-11-06", "domain": "models", "kind": "lab", "text": "Lab L3 — Prompt caching. Confirm cache_write on call 1 and cache_read on call 2.", "link": "lab:L3" },
-        { "id": "w1-7", "date": "2026-11-07", "domain": "design", "kind": "practice", "text": "Practice: all Solution Design questions, then all Models questions.", "link": "practice:design" },
-        { "id": "w1-8", "date": "2026-11-08", "domain": "", "kind": "case", "text": "Case study: answer decisions D2 (design) and D6 (models) in your own words before revealing the model answer.", "link": "case" }
+        { "id": "f1-1", "date": "2026-11-09", "domain": "stake", "kind": "admin", "text": "Check eligibility: sign in to the Anthropic Partner Academy with your company email. If the domain isn't recognized, request it now (takes 7–10 days), and meanwhile check whether you can sit the exam another way.", "link": "" },
+        { "id": "f1-2", "date": "2026-11-09", "domain": "", "kind": "mock", "text": "Baseline: 20-question mock exam, timed. Don't study first.", "link": "mock" },
+        { "id": "f1-3", "date": "2026-11-09", "domain": "design", "kind": "read", "text": "Read the Solution Design domain card. Write one sentence for when you'd choose a single call, a workflow, an agent, and multi-agent.", "link": "domains" },
+        { "id": "f1-4", "date": "2026-11-10", "domain": "design", "kind": "lab", "text": "Lab L1 — Routing workflow. Run it with three different tickets; note which category each goes to.", "link": "lab:L1" },
+        { "id": "f1-5", "date": "2026-11-10", "domain": "models", "kind": "lab", "text": "Lab L2 — Model comparison. Record latency and cost for each tier on the same task.", "link": "lab:L2" },
+        { "id": "f1-6", "date": "2026-11-11", "domain": "models", "kind": "lab", "text": "Lab L3 — Prompt caching. Confirm cache_write on call 1 and cache_read on call 2.", "link": "lab:L3" },
+        { "id": "f1-7", "date": "2026-11-11", "domain": "design", "kind": "practice", "text": "Practice: all Solution Design questions.", "link": "practice:design" },
+        { "id": "f1-8", "date": "2026-11-11", "domain": "models", "kind": "practice", "text": "Practice: all Models questions.", "link": "practice:models" },
+        { "id": "f1-9", "date": "2026-11-12", "domain": "integ", "kind": "read", "text": "Read the Integration domain card. Explain stdio vs Streamable HTTP and where secrets live.", "link": "domains" },
+        { "id": "f1-10", "date": "2026-11-12", "domain": "integ", "kind": "lab", "text": "Lab L5 — Build the MekongFreight MCP server and connect it to Claude Code.", "link": "lab:L5" },
+        { "id": "f1-11", "date": "2026-11-13", "domain": "integ", "kind": "lab", "text": "Lab L4 — Tool use with a human approval gate. Try approving AND denying the reschedule.", "link": "lab:L4" },
+        { "id": "f1-12", "date": "2026-11-13", "domain": "integ", "kind": "lab", "text": "Lab L6 — RAG with citation checks. Find a query that retrieves the outdated 2023 policy and explain why.", "link": "lab:L6" },
+        { "id": "f1-13", "date": "2026-11-14", "domain": "integ", "kind": "practice", "text": "Practice: all Integration questions. Re-do every missed one the next day.", "link": "practice:integ" },
+        { "id": "f1-14", "date": "2026-11-14", "domain": "", "kind": "case", "text": "Case study: answer decisions D1 (integration), D2 (design) and D6 (models) in your own words before revealing the model answer.", "link": "case" },
+        { "id": "f1-15", "date": "2026-11-15", "domain": "", "kind": "mock", "text": "Mid-point mock: 40 questions, timed. Compare with your baseline per domain.", "link": "mock" },
+        { "id": "f1-16", "date": "2026-11-15", "domain": "", "kind": "admin", "text": "Book the exam (Pearson VUE) for Nov 22 if your mock is trending toward 80%. If not, pick a later slot, but no later than Dec 4. Rescheduling must be done at least 48 hours ahead.", "link": "" }
       ]
     },
     {
       "number": 2,
-      "title": "Integration (largest domain)",
-      "dates": "Nov 9 – Nov 15",
-      "goal": "MCP, tools, error handling, secrets and RAG — the 19% domain.",
-      "tasks": [
-        { "id": "w2-1", "date": "2026-11-09", "domain": "integ", "kind": "read", "text": "Read the Integration domain card. Explain stdio vs Streamable HTTP and where secrets live.", "link": "domains" },
-        { "id": "w2-2", "date": "2026-11-10", "domain": "integ", "kind": "lab", "text": "Lab L5 — Build the MekongFreight MCP server and connect it to Claude Code.", "link": "lab:L5" },
-        { "id": "w2-3", "date": "2026-11-11", "domain": "integ", "kind": "lab", "text": "Lab L4 — Tool use with a human approval gate. Try approving AND denying the reschedule.", "link": "lab:L4" },
-        { "id": "w2-4", "date": "2026-11-12", "domain": "integ", "kind": "lab", "text": "Lab L6 — RAG with citation checks. Find a query that retrieves the outdated 2023 policy and explain why.", "link": "lab:L6" },
-        { "id": "w2-5", "date": "2026-11-13", "domain": "integ", "kind": "practice", "text": "Practice: all Integration questions. Re-do every missed one the next day.", "link": "practice:integ" },
-        { "id": "w2-6", "date": "2026-11-14", "domain": "integ", "kind": "case", "text": "Case study: decision D1 (integration).", "link": "case" },
-        { "id": "w2-7", "date": "2026-11-15", "domain": "", "kind": "mock", "text": "Mid-point mock: 40 questions, timed. Compare with your baseline per domain.", "link": "mock" }
-      ]
-    },
-    {
-      "number": 3,
-      "title": "Evaluation + Governance",
+      "title": "Evaluation, governance, stakeholders, dev productivity, exam",
       "dates": "Nov 16 – Nov 22",
-      "goal": "Prove it works, keep it safe. Controls in code, not in prompts.",
+      "goal": "Prove it works, keep it safe, then lock it in with mocks. Controls in code, not in prompts.",
       "tasks": [
-        { "id": "w3-1", "date": "2026-11-16", "domain": "eval", "kind": "lab", "text": "Lab L7 — Code grader + LLM-as-judge. Find a case where the two graders disagree.", "link": "lab:L7" },
-        { "id": "w3-2", "date": "2026-11-17", "domain": "", "kind": "admin", "text": "The updated exam guide is published today (for exams from Dec 7). Skim it for anything that also clarifies the current domains, but keep studying the current guide.", "link": "" },
-        { "id": "w3-3", "date": "2026-11-18", "domain": "eval", "kind": "practice", "text": "Practice: all Evaluation questions.", "link": "practice:eval" },
-        { "id": "w3-4", "date": "2026-11-19", "domain": "gov", "kind": "lab", "text": "Lab L8 — Redaction + audit log. Check what actually leaves your machine.", "link": "lab:L8" },
-        { "id": "w3-5", "date": "2026-11-20", "domain": "gov", "kind": "practice", "text": "Practice: all Governance questions.", "link": "practice:gov" },
-        { "id": "w3-6", "date": "2026-11-21", "domain": "gov", "kind": "case", "text": "Case study: decisions D3 (evaluation) and D4 (governance).", "link": "case" },
-        { "id": "w3-7", "date": "2026-11-22", "domain": "", "kind": "review", "text": "Weak-spot review: practice in 'Missed only' mode across all domains.", "link": "practice:all" }
-      ]
-    },
-    {
-      "number": 4,
-      "title": "Stakeholders, dev productivity, capstone",
-      "dates": "Nov 23 – Nov 29",
-      "goal": "The consulting side, the team side, and the full case study end to end.",
-      "tasks": [
-        { "id": "w4-1", "date": "2026-11-23", "domain": "stake", "kind": "lab", "text": "Lab L9 — Discovery worksheet. Fill it in for MekongFreight.", "link": "lab:L9" },
-        { "id": "w4-2", "date": "2026-11-24", "domain": "stake", "kind": "practice", "text": "Practice: all Stakeholder questions.", "link": "practice:stake" },
-        { "id": "w4-3", "date": "2026-11-25", "domain": "devprod", "kind": "lab", "text": "Lab L10 — Team setup: CLAUDE.md, settings.json deny rules, .mcp.json, CI. Apply it to a scratch repo.", "link": "lab:L10" },
-        { "id": "w4-4", "date": "2026-11-26", "domain": "devprod", "kind": "practice", "text": "Practice: all Developer Productivity questions.", "link": "practice:devprod" },
-        { "id": "w4-5", "date": "2026-11-27", "domain": "", "kind": "case", "text": "Capstone: answer all seven case decisions again from memory, then compare.", "link": "case" },
-        { "id": "w4-6", "date": "2026-11-28", "domain": "", "kind": "mock", "text": "Full mock: all questions, timed. Target ≥ 80% before booking.", "link": "mock" },
-        { "id": "w4-7", "date": "2026-11-29", "domain": "", "kind": "admin", "text": "Book the exam (Pearson VUE) for Dec 3 or 4 if your mocks are ≥ 80%. Run the OnVUE system test if testing online.", "link": "" }
-      ]
-    },
-    {
-      "number": 5,
-      "title": "Final mocks and exam",
-      "dates": "Nov 30 – Dec 6",
-      "goal": "Close the remaining gaps, then sit the exam before the content change.",
-      "tasks": [
-        { "id": "w5-1", "date": "2026-11-30", "domain": "", "kind": "review", "text": "Dashboard: pick the two lowest-accuracy domains, weighted by exam weight. Practice 'Missed only' for those.", "link": "practice:all" },
-        { "id": "w5-2", "date": "2026-12-01", "domain": "", "kind": "mock", "text": "Mock: 40 questions, timed.", "link": "mock" },
-        { "id": "w5-3", "date": "2026-12-02", "domain": "", "kind": "read", "text": "Re-read the trap lists on every domain card. Light day.", "link": "domains" },
-        { "id": "w5-4", "date": "2026-12-03", "domain": "", "kind": "exam", "text": "Exam day (or Dec 4). Bring a government photo ID that matches your Pearson profile name exactly.", "link": "" }
+        { "id": "f2-1", "date": "2026-11-16", "domain": "eval", "kind": "lab", "text": "Lab L7 — Code grader + LLM-as-judge. Find a case where the two graders disagree.", "link": "lab:L7" },
+        { "id": "f2-2", "date": "2026-11-16", "domain": "eval", "kind": "practice", "text": "Practice: all Evaluation questions.", "link": "practice:eval" },
+        { "id": "f2-3", "date": "2026-11-17", "domain": "gov", "kind": "lab", "text": "Lab L8 — Redaction + audit log. Check what actually leaves your machine.", "link": "lab:L8" },
+        { "id": "f2-4", "date": "2026-11-17", "domain": "gov", "kind": "practice", "text": "Practice: all Governance questions.", "link": "practice:gov" },
+        { "id": "f2-5", "date": "2026-11-17", "domain": "", "kind": "admin", "text": "The updated exam guide is published today (for exams from Dec 7). Skim it for anything that also clarifies the current domains, but keep studying the current guide.", "link": "" },
+        { "id": "f2-6", "date": "2026-11-18", "domain": "stake", "kind": "lab", "text": "Lab L9 — Discovery worksheet. Fill it in for MekongFreight.", "link": "lab:L9" },
+        { "id": "f2-7", "date": "2026-11-18", "domain": "stake", "kind": "practice", "text": "Practice: all Stakeholder questions.", "link": "practice:stake" },
+        { "id": "f2-8", "date": "2026-11-18", "domain": "", "kind": "case", "text": "Case study: decisions D3 (evaluation), D4 (governance) and D5 (stakeholders).", "link": "case" },
+        { "id": "f2-9", "date": "2026-11-19", "domain": "devprod", "kind": "lab", "text": "Lab L10 — Team setup: CLAUDE.md, settings.json deny rules, .mcp.json, CI. Apply it to a scratch repo.", "link": "lab:L10" },
+        { "id": "f2-10", "date": "2026-11-19", "domain": "devprod", "kind": "practice", "text": "Practice: all Developer Productivity questions, then case decision D7.", "link": "practice:devprod" },
+        { "id": "f2-11", "date": "2026-11-20", "domain": "", "kind": "mock", "text": "Full mock at exam length (63 questions), timed. Target ≥ 80%.", "link": "mock" },
+        { "id": "f2-12", "date": "2026-11-20", "domain": "", "kind": "review", "text": "Weak-spot review: practice in 'Missed only' mode, focusing on the two lowest-accuracy domains weighted by exam weight.", "link": "practice:all" },
+        { "id": "f2-13", "date": "2026-11-21", "domain": "", "kind": "case", "text": "Capstone (light day): answer all seven case decisions from memory, then compare.", "link": "case" },
+        { "id": "f2-14", "date": "2026-11-21", "domain": "", "kind": "read", "text": "Re-read the trap lists on every domain card. Run the OnVUE system test if testing online.", "link": "domains" },
+        { "id": "f2-15", "date": "2026-11-22", "domain": "", "kind": "exam", "text": "Exam day. Bring a government photo ID that matches your Pearson profile name exactly. If you must move it, the last safe date is Dec 4.", "link": "" }
       ]
     }
   ]
