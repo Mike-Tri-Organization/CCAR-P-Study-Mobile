@@ -5,9 +5,9 @@ Android/phone study app for four Claude certifications. A static, offline-capabl
 | Certification | Content |
 |---|---|
 | **CCAR-P** Architect – Professional | 7 domains, 119 questions, 10 labs (7 run against the real Claude API), case study, two-week plan |
-| **CCAR-F** Architect – Foundations | 5 domains, 51 questions |
-| **CCDV-F** Developer – Foundations | 8 domains, 48 questions |
-| **CCAO-F** Associate – Foundations | 7 domains, 42 questions |
+| **CCAR-F** Architect – Foundations | 5 domains, 182 questions |
+| **CCDV-F** Developer – Foundations | 8 domains, 85 questions |
+| **CCAO-F** Associate – Foundations | 7 domains, 118 questions |
 
 Pick the certification under **More → Certification** (or the card at the top of the dashboard). Each one keeps its own progress, mock history, backups and export file; theme, language and API key are shared.
 
